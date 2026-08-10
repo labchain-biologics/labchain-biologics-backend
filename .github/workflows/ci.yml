@@ -1,12 +1,14 @@
-name: Pull Request CI
+name: CI
 
 on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
 
 concurrency:
-  group: pr-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 permissions:
@@ -26,6 +28,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # Needed so paths-filter can diff on push events (vs previous commit).
+          fetch-depth: 0
 
       - name: Filter paths
         id: filter
@@ -52,10 +57,10 @@ jobs:
               - 'docker-compose*.yml'
               - 'scripts/**'
 
-      - name: Fail on empty pull request
+      - name: Fail when no files changed
         if: steps.filter.outputs.any != 'true'
         run: |
-          echo "::error::Pull request has no file changes against the base branch."
+          echo "::error::No file changes detected for this event (empty PR or empty push)."
           exit 1
 
       - name: Summarize changed areas
