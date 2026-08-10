@@ -5,7 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 
 from app.services.s3 import S3Service
 
@@ -60,6 +60,14 @@ def test_object_exists_false_on_error(s3_service: S3Service, mock_s3_client: Mag
     assert s3_service.object_exists("missing") is False
 
 
+def test_object_exists_raises_on_boto_core_error(
+    s3_service: S3Service, mock_s3_client: MagicMock
+) -> None:
+    mock_s3_client.head_object.side_effect = EndpointConnectionError(endpoint_url="http://s3.local")
+    with pytest.raises(EndpointConnectionError):
+        s3_service.object_exists("missing")
+
+
 def test_ensure_bucket_creates_when_missing(
     s3_service: S3Service, mock_s3_client: MagicMock
 ) -> None:
@@ -79,4 +87,12 @@ def test_ensure_bucket_raises_on_unexpected_client_error(
         "HeadBucket",
     )
     with pytest.raises(ClientError):
+        s3_service.ensure_bucket()
+
+
+def test_ensure_bucket_raises_on_boto_core_error(
+    s3_service: S3Service, mock_s3_client: MagicMock
+) -> None:
+    mock_s3_client.head_bucket.side_effect = EndpointConnectionError(endpoint_url="http://s3.local")
+    with pytest.raises(EndpointConnectionError):
         s3_service.ensure_bucket()

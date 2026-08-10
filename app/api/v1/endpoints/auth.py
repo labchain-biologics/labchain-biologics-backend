@@ -236,10 +236,15 @@ async def register_bootstrap_user(
     Bootstrap user registration for local/dev environments.
     Disabled when APP_ENV=production.
     """
-    if settings.app_env == "production" or not settings.bootstrap_registration_enabled:
+    if settings.app_env == "production":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Self-registration is disabled",
+            detail="Self-registration is disabled in production",
+        )
+    if not settings.bootstrap_registration_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bootstrap registration is not enabled",
         )
 
     existing = await db.execute(select(User).where(User.email == payload.email.lower()))

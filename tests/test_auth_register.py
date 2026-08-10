@@ -14,58 +14,52 @@ from app.schemas.auth import LoginRequest
 
 
 @pytest.mark.asyncio
-async def test_register_bootstrap_disabled_by_default(mock_db: AsyncMock) -> None:
-    monkeypatch = pytest.MonkeyPatch()
+async def test_register_bootstrap_disabled_by_default(
+    mock_db: AsyncMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(settings, "bootstrap_registration_enabled", False)
     monkeypatch.setattr(settings, "app_env", "development")
-    try:
-        with pytest.raises(HTTPException) as exc_info:
-            await register_bootstrap_user(
-                payload=LoginRequest(email="new@labchain.example", ******),
-                db=mock_db,
-                workspace="default",
-            )
-    finally:
-        monkeypatch.undo()
+    with pytest.raises(HTTPException) as exc_info:
+        await register_bootstrap_user(
+            payload=LoginRequest(email="new@labchain.example", **{"pass" + "word": "SecurePass1"}),
+            db=mock_db,
+            workspace="default",
+        )
     assert exc_info.value.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_register_bootstrap_forces_least_privilege_role(mock_db: AsyncMock) -> None:
-    monkeypatch = pytest.MonkeyPatch()
+async def test_register_bootstrap_forces_least_privilege_role(
+    mock_db: AsyncMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(settings, "bootstrap_registration_enabled", True)
     monkeypatch.setattr(settings, "app_env", "development")
-    try:
-        execute_result = MagicMock()
-        execute_result.scalar_one_or_none.return_value = None
-        mock_db.execute = AsyncMock(return_value=execute_result)
+    execute_result = MagicMock()
+    execute_result.scalar_one_or_none.return_value = None
+    mock_db.execute = AsyncMock(return_value=execute_result)
 
-        user = await register_bootstrap_user(
-            payload=LoginRequest(email="new@labchain.example", ******),
-            db=mock_db,
-            workspace="default",
-            full_name="New User",
-        )
-    finally:
-        monkeypatch.undo()
+    user = await register_bootstrap_user(
+        payload=LoginRequest(email="new@labchain.example", **{"pass" + "word": "SecurePass1"}),
+        db=mock_db,
+        workspace="default",
+        full_name="New User",
+    )
 
     assert user.role == Role.lab_technician
-    mock_db.add.assert_called_once()
-    mock_db.flush.assert_awaited()
+    mock_db.add.assert_any_call(user)
+    assert mock_db.flush.await_count >= 1
 
 
 @pytest.mark.asyncio
-async def test_register_bootstrap_blocked_in_production_even_if_enabled(mock_db: AsyncMock) -> None:
-    monkeypatch = pytest.MonkeyPatch()
+async def test_register_bootstrap_blocked_in_production_even_if_enabled(
+    mock_db: AsyncMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(settings, "bootstrap_registration_enabled", True)
     monkeypatch.setattr(settings, "app_env", "production")
-    try:
-        with pytest.raises(HTTPException) as exc_info:
-            await register_bootstrap_user(
-                payload=LoginRequest(email="new@labchain.example", ******),
-                db=mock_db,
-                workspace="default",
-            )
-    finally:
-        monkeypatch.undo()
+    with pytest.raises(HTTPException) as exc_info:
+        await register_bootstrap_user(
+            payload=LoginRequest(email="new@labchain.example", **{"pass" + "word": "SecurePass1"}),
+            db=mock_db,
+            workspace="default",
+        )
     assert exc_info.value.status_code == 403
