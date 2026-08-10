@@ -19,12 +19,15 @@ down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-user_role = sa.Enum(
+# create_type=False: enums are created explicitly in upgrade(); otherwise
+# create_table would emit CREATE TYPE again and fail with DuplicateObjectError.
+user_role = postgresql.ENUM(
     "bioinformatics_lead",
     "lab_technician",
     name="user_role",
+    create_type=False,
 )
-omics_modality = sa.Enum(
+omics_modality = postgresql.ENUM(
     "genomics",
     "transcriptomics",
     "epigenomics",
@@ -32,9 +35,17 @@ omics_modality = sa.Enum(
     "metabolomics",
     "multiomics",
     name="omics_modality",
+    create_type=False,
 )
-qc_status = sa.Enum("pending", "pass", "fail", "warn", name="qc_status")
-job_status = sa.Enum(
+qc_status = postgresql.ENUM(
+    "pending",
+    "pass",
+    "fail",
+    "warn",
+    name="qc_status",
+    create_type=False,
+)
+job_status = postgresql.ENUM(
     "pending",
     "submitted",
     "running",
@@ -42,13 +53,22 @@ job_status = sa.Enum(
     "failed",
     "cancelled",
     name="job_status",
+    create_type=False,
 )
-output_file_type = sa.Enum("vcf", "bam", "multiqc", "other", name="output_file_type")
-fastq_verification_status = sa.Enum(
+output_file_type = postgresql.ENUM(
+    "vcf",
+    "bam",
+    "multiqc",
+    "other",
+    name="output_file_type",
+    create_type=False,
+)
+fastq_verification_status = postgresql.ENUM(
     "pending",
     "verified",
     "mismatch",
     name="fastq_verification_status",
+    create_type=False,
 )
 
 

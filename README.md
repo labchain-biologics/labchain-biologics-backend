@@ -54,13 +54,19 @@ Edit `.env` if needed. Defaults target local Postgres and LocalStack.
 ### 3. Infrastructure
 
 ```bash
-docker compose up -d
+docker compose --env-file .env up -d
 ```
 
 Starts:
 
-- **Postgres** on `localhost:5432` (`labchain` / `labchain` / `labchain`)
+- **Postgres** on `localhost:5433` (`labchain` / `labchain` / `labchain`)
 - **LocalStack** S3 on `localhost:4566` (bucket `labchain-biologics` created on init)
+
+To stop the local infrastructure:
+
+```bash
+docker compose --env-file .env stop
+```
 
 ### 4. Migrations
 
@@ -71,7 +77,7 @@ uv run poe migrate
 ### 5. Run the API
 
 ```bash
-uv run start-dev
+uv run poe start-dev
 ```
 
 | Resource | URL |
