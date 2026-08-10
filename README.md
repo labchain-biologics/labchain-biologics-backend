@@ -9,7 +9,7 @@ FastAPI async backend for **VesselChain Biologics** — a regulated multi-omics 
 | API | FastAPI (async) + Uvicorn |
 | Validation | Pydantic v2 + pydantic-settings |
 | Database | PostgreSQL 16, SQLAlchemy 2.0 Async ORM, asyncpg, Alembic |
-| Auth | PyJWT (HS256), Passlib bcrypt, optional Google OAuth ID tokens |
+| Auth | PyJWT (HS256), bcrypt, optional Google OAuth ID tokens |
 | Object storage | S3 via Boto3 (LocalStack in local dev) |
 | Pipelines | AWS Batch / Nextflow hooks |
 | Streaming | sse-starlette (run log SSE) |

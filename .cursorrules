@@ -1,19 +1,22 @@
 # VesselChain Biologics — Cursor Repository Rules
 
 ## Product context
+
 VesselChain Biologics is a regulated multi-omics LIMS + bioinformatics orchestration platform.
 This repository is the FastAPI async backend. Prefer production-grade, fully written code.
 Never leave TODO, FIXME, placeholder, or truncated implementations.
 
 ## Stack (do not deviate without explicit request)
+
 - Python 3.11+, FastAPI (async), Uvicorn
 - Pydantic v2 + pydantic-settings
 - SQLAlchemy 2.0 Async ORM + asyncpg + Alembic
-- PyJWT HS256 + Passlib bcrypt
+- PyJWT HS256 + bcrypt
 - Boto3 for S3 presigned URLs and AWS Batch/Nextflow hooks
 - sse-starlette for run log streaming
 
 ## Coding standards
+
 - All I/O paths must be async (DB, HTTP). Sync boto3 calls are acceptable inside services; keep them thin.
 - Use SQLAlchemy 2.0 `Mapped[]` / `mapped_column` style only.
 - Pydantic schemas expose camelCase aliases (`rinDin`, `concentrationNgUl`) via `model_config = ConfigDict(populate_by_name=True, from_attributes=True)`.
@@ -24,11 +27,13 @@ Never leave TODO, FIXME, placeholder, or truncated implementations.
 - Keep endpoint modules thin; put AWS/S3/Batch logic in `app/services/`.
 
 ## Domain vocabulary
+
 - Roles: `bioinformatics_lead`, `lab_technician`
 - Sample LIMS fields: modality, rinDin, concentrationNgUl, qcStatus
 - Outputs: VCF, BAM, MultiQC
 - Pipelines: nf-core catalog (rna-seq, sarek, atacseq, …)
 
 ## Frontend contract
+
 Default CORS origin: http://localhost:5173 (Vite/React).
 API prefix: `/api/v1`.
