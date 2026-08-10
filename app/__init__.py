@@ -1,1 +1,1 @@
-"""VesselChain Biologics FastAPI application package."""
+"""LabChain Biologics FastAPI application package."""

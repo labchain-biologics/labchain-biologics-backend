@@ -37,6 +37,6 @@ def test_cors_exposes_workspace_header() -> None:
     assert response.status_code == 200
     exposed = response.headers.get("access-control-expose-headers", "")
     assert (
-        "X-VesselChain-Workspace" in exposed
+        "X-LabChain-Workspace" in exposed
         or response.headers.get("access-control-allow-origin") == "http://localhost:5173"
     )

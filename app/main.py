@@ -1,4 +1,4 @@
-"""VesselChain Biologics FastAPI application entrypoint."""
+"""LabChain Biologics FastAPI application entrypoint."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.DEBUG if settings.debug else logging.INFO,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
-logger = logging.getLogger("vesselchain")
+logger = logging.getLogger("labchain")
 
 
 @asynccontextmanager
@@ -38,7 +38,7 @@ app = FastAPI(
     version="0.1.0",
     description=(
         "Regulated multi-omics LIMS and Nextflow orchestration API "
-        "for VesselChain Biologics (21 CFR Part 11 audit trail)."
+        "for LabChain Biologics (21 CFR Part 11 audit trail)."
     ),
     lifespan=lifespan,
     docs_url="/docs",
@@ -52,7 +52,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-VesselChain-Workspace"],
+    expose_headers=["X-LabChain-Workspace"],
 )
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)

@@ -96,7 +96,7 @@ class BatchService:
                 "workspace": workspace,
             },
             tags={
-                "project": "vesselchain-biologics",
+                "project": "labchain-biologics",
                 "workspace": workspace,
                 "pipeline": pipeline_id,
             },

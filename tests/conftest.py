@@ -1,4 +1,4 @@
-"""Shared fixtures for VesselChain Biologics unit tests."""
+"""Shared fixtures for LabChain Biologics unit tests."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from app.models.user import Role, User
 def sample_user() -> User:
     user = User(
         id=uuid.uuid4(),
-        email="lead@vesselchain.example",
+        email="lead@labchain.example",
         full_name="Bio Lead",
         hashed_password="hashed",
         role=Role.bioinformatics_lead,
@@ -31,7 +31,7 @@ def sample_user() -> User:
 def lab_technician() -> User:
     return User(
         id=uuid.uuid4(),
-        email="tech@vesselchain.example",
+        email="tech@labchain.example",
         full_name="Lab Tech",
         hashed_password="hashed",
         role=Role.lab_technician,

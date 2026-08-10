@@ -187,7 +187,7 @@ jobs:
       - name: Import FastAPI application
         env:
           SECRET_KEY: ci-smoke-secret-key-at-least-32-characters-long
-          DATABASE_URL: postgresql+asyncpg://vesselchain:vesselchain@localhost:5432/vesselchain
+          DATABASE_URL: postgresql+asyncpg://labchain:labchain@localhost:5432/labchain
         run: uv run python -c "from app.main import app; assert app.title"
 
   ci-success:

@@ -1,9 +1,9 @@
 [project]
-name = "vesselchain-biologics"
+name = "labchain-biologics"
 version = "0.1.0"
-description = "VesselChain Biologics — FastAPI LIMS & Nextflow orchestration backend"
+description = "LabChain Biologics — FastAPI LIMS & Nextflow orchestration backend"
 requires-python = ">=3.11"
-authors = [{ name = "VesselChain Biologics" }]
+authors = [{ name = "LabChain Biologics" }]
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
@@ -35,7 +35,7 @@ dev = [
 ]
 
 [project.scripts]
-vesselchain = "uvicorn:main"
+labchain = "uvicorn:main"
 
 [build-system]
 requires = ["hatchling"]
