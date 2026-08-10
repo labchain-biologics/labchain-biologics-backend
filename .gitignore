@@ -42,3 +42,6 @@ uv.lock
 # Logs
 *.log
 logs/
+
+# MkDocs
+site/

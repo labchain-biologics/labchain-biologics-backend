@@ -52,6 +52,8 @@ jobs:
             markdown:
               - '**/*.md'
               - '.markdownlint-cli2.yaml'
+              - 'mkdocs.yml'
+              - 'docs/**'
             docker:
               - 'Dockerfile*'
               - 'docker-compose*.yml'

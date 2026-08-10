@@ -130,6 +130,18 @@ uv run poe check
 uv run poe test
 ```
 
+## Documentation
+
+MkDocs (Material) sources live in `docs/`. Local preview:
+
+```bash
+uv sync --extra dev --extra docs
+uv run poe docs-serve
+```
+
+On push to `main`, GitHub Actions publishes to GitHub Pages
+(`https://labchain-biologics.github.io/labchain-biologics-backend/`).
+
 ## Configuration
 
 See [`.env.example`](.env.example). Important variables:
