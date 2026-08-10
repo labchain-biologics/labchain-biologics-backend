@@ -1,0 +1,17 @@
+# Markdown lint config for CI (markdownlint-cli2)
+config:
+  # Docs often use long lines and bare localhost URLs.
+  MD013: false
+  MD034: false
+  # Allow unlabeled fences for ASCII trees / plain blocks.
+  MD040: false
+
+globs:
+  - "**/*.md"
+
+ignores:
+  - ".venv/**"
+  - "venv/**"
+  - "node_modules/**"
+  - "**/.pytest_cache/**"
+  - "**/.mypy_cache/**"

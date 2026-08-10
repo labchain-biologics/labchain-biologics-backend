@@ -1,0 +1,217 @@
+name: Pull Request CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changes:
+    name: Detect changed files
+    runs-on: ubuntu-latest
+    outputs:
+      any: ${{ steps.filter.outputs.any }}
+      python: ${{ steps.filter.outputs.python }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+      markdown: ${{ steps.filter.outputs.markdown }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Filter paths
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          list-files: shell
+          filters: |
+            any:
+              - '**'
+            python:
+              - 'app/**'
+              - 'tests/**'
+              - 'alembic/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
+              - '.pre-commit-config.yaml'
+            workflows:
+              - '.github/workflows/**'
+            markdown:
+              - '**/*.md'
+              - '.markdownlint-cli2.yaml'
+            docker:
+              - 'Dockerfile*'
+              - 'docker-compose*.yml'
+              - 'scripts/**'
+
+      - name: Fail on empty pull request
+        if: steps.filter.outputs.any != 'true'
+        run: |
+          echo "::error::Pull request has no file changes against the base branch."
+          exit 1
+
+      - name: Summarize changed areas
+        run: |
+          {
+            echo "## Changed areas"
+            echo ""
+            echo "| Area | Changed |"
+            echo "| --- | --- |"
+            echo "| Python / tests | \`${{ steps.filter.outputs.python }}\` |"
+            echo "| Workflows | \`${{ steps.filter.outputs.workflows }}\` |"
+            echo "| Markdown | \`${{ steps.filter.outputs.markdown }}\` |"
+            echo "| Docker / scripts | \`${{ steps.filter.outputs.docker }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  unit-tests:
+    name: Unit tests
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: true
+          python-version: "3.11"
+
+      - name: Sync dependencies
+        run: uv sync --extra dev
+
+      - name: Run unit tests
+        run: uv run poe test
+
+  pre-commit:
+    name: Pre-commit (lint / format / mypy)
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: true
+          python-version: "3.11"
+
+      - name: Sync dependencies
+        run: uv sync --extra dev
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run pre-commit on all files
+        run: uv run poe check
+
+  actionlint:
+    name: Actionlint
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run actionlint
+        uses: raven-actions/actionlint@v2
+        with:
+          fail-on-error: true
+          shellcheck: true
+
+  markdownlint:
+    name: Markdownlint
+    needs: changes
+    if: needs.changes.outputs.markdown == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run markdownlint-cli2
+        uses: DavidAnson/markdownlint-cli2-action@v24
+
+  trivy:
+    name: Trivy (fs / secrets / misconfig)
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+  import-smoke:
+    name: App import smoke check
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: true
+          python-version: "3.11"
+
+      - name: Sync dependencies
+        run: uv sync --extra dev
+
+      - name: Import FastAPI application
+        env:
+          SECRET_KEY: ci-smoke-secret-key-at-least-32-characters-long
+          DATABASE_URL: postgresql+asyncpg://vesselchain:vesselchain@localhost:5432/vesselchain
+        run: uv run python -c "from app.main import app; assert app.title"
+
+  ci-success:
+    name: CI gate
+    needs:
+      - changes
+      - unit-tests
+      - pre-commit
+      - actionlint
+      - markdownlint
+      - trivy
+      - import-smoke
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ',') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in ${RESULTS//,/ }; do
+            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
+              echo "::error::One or more CI jobs failed (result=$result)."
+              exit 1
+            fi
+          done
+          echo "All CI checks passed (or were skipped as not applicable)."
