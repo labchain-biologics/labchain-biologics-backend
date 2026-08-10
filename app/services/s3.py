@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
+from typing import Any, cast
 
 import boto3
-from botocore.client import BaseClient
 from botocore.config import Config
+from mypy_boto3_s3 import S3Client
 
 from app.core.config import settings
 
 
 @lru_cache
-def get_s3_client() -> BaseClient:
+def get_s3_client() -> S3Client:
     client_kwargs: dict[str, Any] = {
         "service_name": "s3",
         "region_name": settings.aws_region,
@@ -23,11 +23,11 @@ def get_s3_client() -> BaseClient:
     }
     if settings.s3_endpoint_url:
         client_kwargs["endpoint_url"] = settings.s3_endpoint_url
-    return boto3.client(**client_kwargs)
+    return cast(S3Client, boto3.client(**client_kwargs))
 
 
 class S3Service:
-    def __init__(self, client: BaseClient | None = None) -> None:
+    def __init__(self, client: S3Client | None = None) -> None:
         self._client = client or get_s3_client()
         self._bucket = settings.s3_bucket
         self._expire = settings.s3_presign_expire_seconds

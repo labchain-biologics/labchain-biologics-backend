@@ -18,9 +18,7 @@ router = APIRouter(prefix="/results", tags=["results"])
 
 
 def _to_read(item: RunOutputFile) -> RunOutputFileRead:
-    download_url = s3_service.generate_presigned_download_url(
-        item.s3_key, filename=item.filename
-    )
+    download_url = s3_service.generate_presigned_download_url(item.s3_key, filename=item.filename)
     return RunOutputFileRead(
         id=item.id,
         file_type=item.file_type,

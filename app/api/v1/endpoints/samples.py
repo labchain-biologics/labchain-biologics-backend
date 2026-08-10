@@ -45,9 +45,7 @@ def _apply_update(sample: Sample, patch: SampleUpdate) -> None:
         setattr(sample, key, value)
 
 
-async def _get_workspace_sample(
-    db: DbSession, workspace: str, sample_id: uuid.UUID
-) -> Sample:
+async def _get_workspace_sample(db: DbSession, workspace: str, sample_id: uuid.UUID) -> Sample:
     result = await db.execute(
         select(Sample).where(Sample.id == sample_id, Sample.workspace == workspace)
     )
@@ -152,8 +150,7 @@ async def import_samples_csv(
         try:
             create_payload = SampleCreate.model_validate(
                 {
-                    "sampleCode": normalized.get("sampleCode")
-                    or normalized.get("sample_code"),
+                    "sampleCode": normalized.get("sampleCode") or normalized.get("sample_code"),
                     "patientId": normalized.get("patientId")
                     or normalized.get("patient_id")
                     or None,
@@ -171,8 +168,7 @@ async def import_samples_csv(
                         normalized.get("rinDin") or normalized.get("rin_din")
                     ),
                     "concentrationNgUl": _optional_float(
-                        normalized.get("concentrationNgUl")
-                        or normalized.get("concentration_ng_ul")
+                        normalized.get("concentrationNgUl") or normalized.get("concentration_ng_ul")
                     ),
                     "volumeUl": _optional_float(
                         normalized.get("volumeUl") or normalized.get("volume_ul")
@@ -180,9 +176,7 @@ async def import_samples_csv(
                     "qcStatus": normalized.get("qcStatus")
                     or normalized.get("qc_status")
                     or "pending",
-                    "qcNotes": normalized.get("qcNotes")
-                    or normalized.get("qc_notes")
-                    or None,
+                    "qcNotes": normalized.get("qcNotes") or normalized.get("qc_notes") or None,
                     "metadata": {},
                 }
             )

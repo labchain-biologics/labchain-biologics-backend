@@ -70,9 +70,7 @@ async def launch_run(
         )
 
     version = (
-        payload.pipeline_version
-        if payload.pipeline_version != "latest"
-        else catalog_item.version
+        payload.pipeline_version if payload.pipeline_version != "latest" else catalog_item.version
     )
     merged_params = {**catalog_item.default_params, **payload.parameters}
 
@@ -212,9 +210,7 @@ async def stream_run_logs(
     return EventSourceResponse(event_generator())
 
 
-async def _get_workspace_job(
-    db: DbSession, workspace: str, run_id: uuid.UUID
-) -> PipelineJob:
+async def _get_workspace_job(db: DbSession, workspace: str, run_id: uuid.UUID) -> PipelineJob:
     result = await db.execute(
         select(PipelineJob)
         .where(PipelineJob.id == run_id, PipelineJob.workspace == workspace)

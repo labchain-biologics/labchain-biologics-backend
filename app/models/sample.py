@@ -33,9 +33,7 @@ class QcStatus(enum.StrEnum):
 class Sample(Base):
     __tablename__ = "samples"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sample_code: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
     workspace: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
     patient_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -60,9 +58,7 @@ class Sample(Base):
         default=QcStatus.pending,
     )
     qc_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    metadata_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
-    )
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

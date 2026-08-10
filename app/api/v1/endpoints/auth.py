@@ -185,9 +185,7 @@ async def login(
     else:
         body = await request.json()
         login_payload = LoginRequest.model_validate(body)
-        user = await _authenticate_password(
-            db, login_payload.email.lower(), login_payload.password
-        )
+        user = await _authenticate_password(db, login_payload.email.lower(), login_payload.password)
 
     await audit_service.record(
         db,

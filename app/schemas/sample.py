@@ -21,9 +21,7 @@ class SampleBase(BaseModel):
     tissue_type: str | None = Field(default=None, alias="tissueType", max_length=128)
     collection_date: str | None = Field(default=None, alias="collectionDate", max_length=32)
     rin_din: float | None = Field(default=None, alias="rinDin", ge=0, le=10)
-    concentration_ng_ul: float | None = Field(
-        default=None, alias="concentrationNgUl", ge=0
-    )
+    concentration_ng_ul: float | None = Field(default=None, alias="concentrationNgUl", ge=0)
     volume_ul: float | None = Field(default=None, alias="volumeUl", ge=0)
     qc_status: QcStatus = Field(default=QcStatus.pending, alias="qcStatus")
     qc_notes: str | None = Field(default=None, alias="qcNotes")
@@ -51,9 +49,7 @@ class SampleUpdate(BaseModel):
     tissue_type: str | None = Field(default=None, alias="tissueType", max_length=128)
     collection_date: str | None = Field(default=None, alias="collectionDate", max_length=32)
     rin_din: float | None = Field(default=None, alias="rinDin", ge=0, le=10)
-    concentration_ng_ul: float | None = Field(
-        default=None, alias="concentrationNgUl", ge=0
-    )
+    concentration_ng_ul: float | None = Field(default=None, alias="concentrationNgUl", ge=0)
     volume_ul: float | None = Field(default=None, alias="volumeUl", ge=0)
     qc_status: QcStatus | None = Field(default=None, alias="qcStatus")
     qc_notes: str | None = Field(default=None, alias="qcNotes")

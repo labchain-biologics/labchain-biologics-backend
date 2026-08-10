@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, status
@@ -24,9 +23,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 async def get_workspace(
-    x_vesselchain_workspace: Annotated[
-        str | None, Header(alias="X-VesselChain-Workspace")
-    ] = None,
+    x_vesselchain_workspace: Annotated[str | None, Header(alias="X-VesselChain-Workspace")] = None,
 ) -> str:
     workspace = (x_vesselchain_workspace or settings.default_workspace).strip()
     if not workspace:
@@ -70,9 +67,7 @@ class RequireRole:
             role if isinstance(role, Role) else Role(role) for role in roles
         }
 
-    async def __call__(
-        self, current_user: Annotated[User, Depends(get_current_user)]
-    ) -> User:
+    async def __call__(self, current_user: Annotated[User, Depends(get_current_user)]) -> User:
         if current_user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -84,10 +79,8 @@ class RequireRole:
         return current_user
 
 
-require_lab_or_lead: Callable[..., User] = RequireRole(
-    Role.lab_technician, Role.bioinformatics_lead
-)
-require_bioinformatics_lead: Callable[..., User] = RequireRole(Role.bioinformatics_lead)
+require_lab_or_lead = RequireRole(Role.lab_technician, Role.bioinformatics_lead)
+require_bioinformatics_lead = RequireRole(Role.bioinformatics_lead)
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]

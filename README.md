@@ -65,13 +65,13 @@ Starts:
 ### 4. Migrations
 
 ```bash
-uv run alembic upgrade head
+uv run poe migrate
 ```
 
 ### 5. Run the API
 
 ```bash
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run start-dev
 ```
 
 | Resource | URL |
@@ -117,14 +117,11 @@ scripts/        # LocalStack init
 ## Development
 
 ```bash
-# Lint
-uv run ruff check .
-
-# Type check
-uv run mypy app
+# Pre-commit
+uv run poe check
 
 # Tests
-uv run pytest
+uv run poe test
 ```
 
 ## Configuration

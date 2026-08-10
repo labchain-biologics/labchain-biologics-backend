@@ -44,9 +44,7 @@ async def register_fastq(
     workspace: Workspace,
     current_user: LabOrLead,
 ) -> FastqRegisterResponse:
-    s3_key = payload.s3_key or s3_service.build_object_key(
-        workspace, "fastq", payload.filename
-    )
+    s3_key = payload.s3_key or s3_service.build_object_key(workspace, "fastq", payload.filename)
     fastq = FastqFile(
         workspace=workspace,
         filename=payload.filename,
@@ -61,9 +59,7 @@ async def register_fastq(
     db.add(fastq)
     await db.flush()
 
-    upload_url = s3_service.generate_presigned_upload_url(
-        s3_key, content_type="application/gzip"
-    )
+    upload_url = s3_service.generate_presigned_upload_url(s3_key, content_type="application/gzip")
 
     await audit_service.record(
         db,
@@ -100,9 +96,7 @@ async def verify_fastq(
     current_user: LabOrLead,
 ) -> FastqVerifyResponse:
     result = await db.execute(
-        select(FastqFile).where(
-            FastqFile.id == fastq_id, FastqFile.workspace == workspace
-        )
+        select(FastqFile).where(FastqFile.id == fastq_id, FastqFile.workspace == workspace)
     )
     fastq = result.scalar_one_or_none()
     if fastq is None:

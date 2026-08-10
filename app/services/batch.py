@@ -9,7 +9,8 @@ from functools import lru_cache
 from typing import Any
 
 import boto3
-from botocore.client import BaseClient
+from mypy_boto3_batch import BatchClient
+from mypy_boto3_batch.type_defs import ContainerOverridesTypeDef
 
 from app.core.config import settings
 
@@ -26,7 +27,7 @@ class BatchSubmissionResult:
 
 
 @lru_cache
-def get_batch_client() -> BaseClient | None:
+def get_batch_client() -> BatchClient | None:
     if not settings.aws_batch_enabled:
         return None
     return boto3.client(
@@ -51,7 +52,7 @@ class BatchService:
         work_dir = f"{settings.nextflow_work_dir.rstrip('/')}/{workspace}/{nextflow_run_name}"
         job_name = nextflow_run_name[:128]
 
-        container_overrides = {
+        container_overrides: ContainerOverridesTypeDef = {
             "command": [
                 "nextflow",
                 "run",

@@ -39,9 +39,7 @@ class FastqVerificationStatus(enum.StrEnum):
 class SequencingRun(Base):
     __tablename__ = "sequencing_runs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     run_name: Mapped[str] = mapped_column(String(255), nullable=False)
     workspace: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
     instrument: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -54,17 +52,13 @@ class SequencingRun(Base):
     )
 
     fastq_files = relationship("FastqFile", back_populates="sequencing_run", lazy="selectin")
-    pipeline_jobs = relationship(
-        "PipelineJob", back_populates="sequencing_run", lazy="selectin"
-    )
+    pipeline_jobs = relationship("PipelineJob", back_populates="sequencing_run", lazy="selectin")
 
 
 class FastqFile(Base):
     __tablename__ = "fastq_files"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sequencing_run_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("sequencing_runs.id", ondelete="SET NULL"),
@@ -96,9 +90,7 @@ class FastqFile(Base):
 class PipelineJob(Base):
     __tablename__ = "pipeline_jobs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     workspace: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
     pipeline_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     pipeline_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -136,17 +128,13 @@ class PipelineJob(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     sequencing_run = relationship("SequencingRun", back_populates="pipeline_jobs")
-    output_files = relationship(
-        "RunOutputFile", back_populates="pipeline_job", lazy="selectin"
-    )
+    output_files = relationship("RunOutputFile", back_populates="pipeline_job", lazy="selectin")
 
 
 class RunOutputFile(Base):
     __tablename__ = "run_output_files"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     pipeline_job_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("pipeline_jobs.id", ondelete="CASCADE"),
@@ -165,9 +153,7 @@ class RunOutputFile(Base):
     sample_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("samples.id", ondelete="SET NULL"), nullable=True
     )
-    metadata_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
-    )
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -32,9 +32,7 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
     )
 
-    database_url: str = (
-        "postgresql+asyncpg://vesselchain:vesselchain@localhost:5432/vesselchain"
-    )
+    database_url: str = "postgresql+asyncpg://vesselchain:vesselchain@localhost:5432/vesselchain"
 
     google_client_id: str = ""
 
@@ -70,7 +68,7 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()  # type: ignore[call-arg]
+    return Settings()
 
 
 settings = get_settings()

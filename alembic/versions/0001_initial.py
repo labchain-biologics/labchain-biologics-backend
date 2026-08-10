@@ -188,9 +188,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["sequencing_run_id"], ["sequencing_runs.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["sequencing_run_id"], ["sequencing_runs.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["sample_id"], ["samples.id"], ondelete="SET NULL"),
     )
     op.create_index("ix_fastq_files_workspace", "fastq_files", ["workspace"])
@@ -241,9 +239,7 @@ def upgrade() -> None:
         ),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("finished_at", sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["sequencing_run_id"], ["sequencing_runs.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["sequencing_run_id"], ["sequencing_runs.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["launched_by"], ["users.id"], ondelete="SET NULL"),
     )
     op.create_index("ix_pipeline_jobs_workspace", "pipeline_jobs", ["workspace"])
@@ -273,15 +269,11 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["pipeline_job_id"], ["pipeline_jobs.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["pipeline_job_id"], ["pipeline_jobs.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["sample_id"], ["samples.id"], ondelete="SET NULL"),
     )
     op.create_index("ix_run_output_files_workspace", "run_output_files", ["workspace"])
-    op.create_index(
-        "ix_run_output_files_pipeline_job_id", "run_output_files", ["pipeline_job_id"]
-    )
+    op.create_index("ix_run_output_files_pipeline_job_id", "run_output_files", ["pipeline_job_id"])
 
 
 def downgrade() -> None:
