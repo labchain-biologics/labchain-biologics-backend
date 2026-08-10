@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import os
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
+os.environ.setdefault("SECRET_KEY", "test-secret-key-that-is-at-least-32-characters-long")
 
 from app.models.user import Role, User
 

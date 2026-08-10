@@ -50,6 +50,7 @@ cp .env.example .env
 ```
 
 Edit `.env` if needed. Defaults target local Postgres and LocalStack.
+Set `SECRET_KEY` to a strong random value before starting the API.
 
 ### 3. Infrastructure
 
@@ -130,7 +131,8 @@ See [`.env.example`](.env.example). Important variables:
 
 | Variable | Purpose |
 | --- | --- |
-| `SECRET_KEY` | JWT HS256 secret (≥ 32 chars) |
+| `SECRET_KEY` | JWT HS256 secret (≥ 32 chars, required, must not be placeholder) |
+| `BOOTSTRAP_REGISTRATION_ENABLED` | Enables `/auth/register` bootstrap flow outside production (default `false`) |
 | `DATABASE_URL` | Async Postgres URL (`postgresql+asyncpg://…`) |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
 | `S3_ENDPOINT_URL` | LocalStack (`http://localhost:4566`) or empty for real AWS |
