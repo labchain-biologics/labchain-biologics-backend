@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -16,6 +17,11 @@ from app.core.config import settings
 
 class Base(DeclarativeBase):
     """Declarative base for all ORM models."""
+
+
+def utc_now() -> datetime:
+    """Timezone-aware UTC now for ORM ``onupdate`` (safe under async SQLAlchemy)."""
+    return datetime.now(UTC)
 
 
 engine = create_async_engine(

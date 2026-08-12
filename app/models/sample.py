@@ -11,7 +11,7 @@ from sqlalchemy import DateTime, Enum, Float, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base
+from app.core.database import Base, utc_now
 
 
 class OmicsModality(enum.StrEnum):
@@ -65,6 +65,6 @@ class Sample(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
-        onupdate=func.now(),
+        onupdate=utc_now,
         nullable=False,
     )

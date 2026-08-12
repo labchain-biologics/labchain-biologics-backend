@@ -6,9 +6,12 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 from app.models.sample import OmicsModality, QcStatus
+
+# Prefer ORM column `metadata_json` over SQLAlchemy's reserved `.metadata` (MetaData).
+_METADATA_ALIASES = AliasChoices("metadata_json", "metadata")
 
 
 class SampleBase(BaseModel):
@@ -25,7 +28,11 @@ class SampleBase(BaseModel):
     volume_ul: float | None = Field(default=None, alias="volumeUl", ge=0)
     qc_status: QcStatus = Field(default=QcStatus.pending, alias="qcStatus")
     qc_notes: str | None = Field(default=None, alias="qcNotes")
-    metadata_json: dict[str, Any] = Field(default_factory=dict, alias="metadata")
+    metadata_json: dict[str, Any] = Field(
+        default_factory=dict,
+        validation_alias=_METADATA_ALIASES,
+        serialization_alias="metadata",
+    )
 
     @field_validator("qc_status", mode="before")
     @classmethod
@@ -53,7 +60,11 @@ class SampleUpdate(BaseModel):
     volume_ul: float | None = Field(default=None, alias="volumeUl", ge=0)
     qc_status: QcStatus | None = Field(default=None, alias="qcStatus")
     qc_notes: str | None = Field(default=None, alias="qcNotes")
-    metadata_json: dict[str, Any] | None = Field(default=None, alias="metadata")
+    metadata_json: dict[str, Any] | None = Field(
+        default=None,
+        validation_alias=_METADATA_ALIASES,
+        serialization_alias="metadata",
+    )
 
 
 class SampleRead(SampleBase):

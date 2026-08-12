@@ -6,13 +6,16 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from app.models.pipeline import (
     FastqVerificationStatus,
     JobStatus,
     OutputFileType,
 )
+
+# Prefer ORM column `metadata_json` over SQLAlchemy's reserved `.metadata` (MetaData).
+_METADATA_ALIASES = AliasChoices("metadata_json", "metadata")
 
 
 class PipelineCatalogItem(BaseModel):
@@ -100,7 +103,11 @@ class RunOutputFileRead(BaseModel):
     size_bytes: int = Field(alias="sizeBytes")
     md5: str | None = None
     sample_id: uuid.UUID | None = Field(default=None, alias="sampleId")
-    metadata_json: dict[str, Any] = Field(default_factory=dict, alias="metadata")
+    metadata_json: dict[str, Any] = Field(
+        default_factory=dict,
+        validation_alias=_METADATA_ALIASES,
+        serialization_alias="metadata",
+    )
     download_url: str | None = Field(default=None, alias="downloadUrl")
     created_at: datetime = Field(alias="createdAt")
 
