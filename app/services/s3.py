@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from mypy_boto3_s3 import S3Client
 
 from app.core.config import settings
@@ -35,7 +36,10 @@ class S3Service:
     def ensure_bucket(self) -> None:
         try:
             self._client.head_bucket(Bucket=self._bucket)
-        except Exception:
+        except ClientError as exc:
+            error_code = str(exc.response.get("Error", {}).get("Code", ""))
+            if error_code not in {"404", "NotFound", "NoSuchBucket"}:
+                raise
             create_kwargs: dict[str, Any] = {"Bucket": self._bucket}
             if settings.aws_region != "us-east-1" and not settings.s3_endpoint_url:
                 create_kwargs["CreateBucketConfiguration"] = {
@@ -84,8 +88,11 @@ class S3Service:
         try:
             self._client.head_object(Bucket=self._bucket, Key=key)
             return True
-        except Exception:
-            return False
+        except ClientError as exc:
+            error_code = str(exc.response.get("Error", {}).get("Code", ""))
+            if error_code in {"404", "NoSuchKey", "NotFound"}:
+                return False
+            raise
 
 
 s3_service = S3Service()

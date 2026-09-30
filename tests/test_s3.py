@@ -5,6 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
+from botocore.exceptions import ClientError, EndpointConnectionError
 
 from app.services.s3 import S3Service
 
@@ -52,13 +53,46 @@ def test_object_exists_true(s3_service: S3Service, mock_s3_client: MagicMock) ->
 
 
 def test_object_exists_false_on_error(s3_service: S3Service, mock_s3_client: MagicMock) -> None:
-    mock_s3_client.head_object.side_effect = Exception("NotFound")
+    mock_s3_client.head_object.side_effect = ClientError(
+        {"Error": {"Code": "404", "Message": "Not Found"}},
+        "HeadObject",
+    )
     assert s3_service.object_exists("missing") is False
+
+
+def test_object_exists_raises_on_boto_core_error(
+    s3_service: S3Service, mock_s3_client: MagicMock
+) -> None:
+    mock_s3_client.head_object.side_effect = EndpointConnectionError(endpoint_url="http://s3.local")
+    with pytest.raises(EndpointConnectionError):
+        s3_service.object_exists("missing")
 
 
 def test_ensure_bucket_creates_when_missing(
     s3_service: S3Service, mock_s3_client: MagicMock
 ) -> None:
-    mock_s3_client.head_bucket.side_effect = Exception("NoSuchBucket")
+    mock_s3_client.head_bucket.side_effect = ClientError(
+        {"Error": {"Code": "NoSuchBucket", "Message": "No such bucket"}},
+        "HeadBucket",
+    )
     s3_service.ensure_bucket()
     mock_s3_client.create_bucket.assert_called_once()
+
+
+def test_ensure_bucket_raises_on_unexpected_client_error(
+    s3_service: S3Service, mock_s3_client: MagicMock
+) -> None:
+    mock_s3_client.head_bucket.side_effect = ClientError(
+        {"Error": {"Code": "AccessDenied", "Message": "denied"}},
+        "HeadBucket",
+    )
+    with pytest.raises(ClientError):
+        s3_service.ensure_bucket()
+
+
+def test_ensure_bucket_raises_on_boto_core_error(
+    s3_service: S3Service, mock_s3_client: MagicMock
+) -> None:
+    mock_s3_client.head_bucket.side_effect = EndpointConnectionError(endpoint_url="http://s3.local")
+    with pytest.raises(EndpointConnectionError):
+        s3_service.ensure_bucket()

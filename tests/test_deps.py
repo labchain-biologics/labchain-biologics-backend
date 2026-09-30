@@ -6,7 +6,6 @@ import pytest
 from fastapi import HTTPException
 
 from app.api.deps import RequireRole, get_workspace
-from app.core.config import settings
 from app.models.user import Role, User
 
 
@@ -16,8 +15,10 @@ async def test_get_workspace_uses_header() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_workspace_falls_back_to_default() -> None:
-    assert await get_workspace(None) == settings.default_workspace
+async def test_get_workspace_requires_header() -> None:
+    with pytest.raises(HTTPException) as exc_info:
+        await get_workspace(None)
+    assert exc_info.value.status_code == 400
 
 
 @pytest.mark.asyncio

@@ -25,8 +25,13 @@ oauth2_scheme = OAuth2PasswordBearer(
 async def get_workspace(
     x_labchain_workspace: Annotated[str | None, Header(alias="X-LabChain-Workspace")] = None,
 ) -> str:
-    workspace = (x_labchain_workspace or settings.default_workspace).strip()
-    if not workspace:
+    if x_labchain_workspace is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="X-LabChain-Workspace header is required",
+        )
+    workspace = x_labchain_workspace.strip()
+    if workspace == "":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="X-LabChain-Workspace header must not be empty",

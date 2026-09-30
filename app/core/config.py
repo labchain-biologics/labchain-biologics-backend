@@ -21,10 +21,11 @@ class Settings(BaseSettings):
     app_env: str = "development"
     debug: bool = False
     secret_key: str = Field(
-        default="change-me-to-a-long-random-secret-key-at-least-32-chars",
+        ...,
         min_length=32,
         description="JWT signing secret (HS256)",
     )
+    bootstrap_registration_enabled: bool = False
     access_token_expire_minutes: int = 60
     api_v1_prefix: str = "/api/v1"
 
@@ -48,8 +49,6 @@ class Settings(BaseSettings):
     aws_batch_enabled: bool = False
     nextflow_work_dir: str = "s3://labchain-biologics/nextflow-work"
 
-    default_workspace: str = "default"
-
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> list[str]:
@@ -60,6 +59,19 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [part.strip() for part in value.split(",") if part.strip()]
         raise TypeError("cors_origins must be a comma-separated string or list")
+
+    @field_validator("secret_key")
+    @classmethod
+    def validate_secret_key(cls, value: str) -> str:
+        blocked_values = {
+            "change-me-to-a-long-random-secret-key-at-least-32-chars",
+            "__replace_with_a_long_random_secret_key__",
+            "replace-me",
+        }
+        normalized = value.strip().lower()
+        if normalized in blocked_values:
+            raise ValueError("secret_key must be explicitly configured to a strong random value")
+        return value
 
     @property
     def is_localstack(self) -> bool:

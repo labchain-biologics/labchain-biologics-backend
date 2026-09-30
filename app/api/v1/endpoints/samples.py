@@ -8,6 +8,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
+from pydantic import ValidationError
 from sqlalchemy import select
 
 from app.api.deps import DbSession, LabOrLead, Workspace
@@ -180,7 +181,7 @@ async def import_samples_csv(
                     "metadata": {},
                 }
             )
-        except Exception as exc:
+        except (ValidationError, ValueError, TypeError) as exc:
             errors.append(f"row {row_number}: {exc}")
             skipped += 1
             continue

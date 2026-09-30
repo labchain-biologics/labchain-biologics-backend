@@ -55,3 +55,14 @@ def test_is_localstack_false_when_endpoint_missing() -> None:
 def test_secret_key_min_length_enforced() -> None:
     with pytest.raises(ValidationError):
         Settings(secret_key="too-short")
+
+
+def test_secret_key_placeholder_is_rejected() -> None:
+    with pytest.raises(ValidationError):
+        Settings(secret_key="__replace_with_a_long_random_secret_key__")
+
+
+def test_secret_key_required_when_env_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)

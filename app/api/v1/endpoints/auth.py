@@ -8,6 +8,7 @@ from typing import Annotated, Any
 import jwt
 from fastapi import APIRouter, HTTPException, Query, Request, status
 from jwt import PyJWKClient
+from jwt.exceptions import PyJWKClientError, PyJWTError
 from sqlalchemy import select
 
 from app.api.deps import CurrentUser, DbSession, Workspace
@@ -90,8 +91,8 @@ async def _verify_google_id_token(id_token: str) -> dict[str, Any]:
             audience=settings.google_client_id,
             issuer=["accounts.google.com", "https://accounts.google.com"],
         )
-    except Exception as exc:
-        logger.warning("Google ID token verification failed: %s", exc)
+    except (PyJWTError, PyJWKClientError, ValueError, TypeError) as exc:
+        logger.warning("Google ID token verification failed: %s", exc, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Google ID token",
@@ -230,7 +231,6 @@ async def register_bootstrap_user(
     db: DbSession,
     workspace: Workspace,
     full_name: Annotated[str, Query(alias="fullName")] = "",
-    role: Annotated[Role, Query()] = Role.lab_technician,
 ) -> User:
     """
     Bootstrap user registration for local/dev environments.
@@ -240,6 +240,11 @@ async def register_bootstrap_user(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Self-registration is disabled in production",
+        )
+    if not settings.bootstrap_registration_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bootstrap registration is not enabled",
         )
 
     existing = await db.execute(select(User).where(User.email == payload.email.lower()))
@@ -253,7 +258,7 @@ async def register_bootstrap_user(
         email=payload.email.lower(),
         full_name=full_name or payload.email.split("@")[0],
         hashed_password=hash_password(payload.password),
-        role=role,
+        role=Role.lab_technician,
         is_active=True,
     )
     db.add(user)
