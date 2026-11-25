@@ -45,6 +45,7 @@ curl -s 'http://localhost:8000/api/v1/runs?status=running&limit=10' \
     "sampleIds": ["11111111-1111-1111-1111-111111111111"],
     "parameters": { "aligner": "star_salmon" },
     "awsBatchJobId": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+    "executionSubmitted": true,
     "nextflowRunName": "RNA-001-rnaseq",
     "workDir": "s3://labchain-biologics/demo/work/...",
     "launchedBy": "7c9e6679-7425-40de-944b-e07fc1f90ae7",

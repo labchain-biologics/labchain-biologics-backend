@@ -162,7 +162,7 @@
         "title": "ApiTokenRead",
         "type": "object"
       },
-      "Body_import_samples_csv_api_v1_samples_import_post": {
+      "Body_import_samples_csv": {
         "properties": {
           "file": {
             "contentMediaType": "application/octet-stream",
@@ -173,7 +173,7 @@
         "required": [
           "file"
         ],
-        "title": "Body_import_samples_csv_api_v1_samples_import_post",
+        "title": "Body_import_samples_csv",
         "type": "object"
       },
       "FastqRead": {
@@ -734,6 +734,12 @@
             "title": "Createdat",
             "type": "string"
           },
+          "executionSubmitted": {
+            "description": "True when the run was submitted to an executor (AWS Batch). False when pipeline execution is disabled on this instance: the run is recorded but never executed and stays pending",
+            "readOnly": true,
+            "title": "Executionsubmitted",
+            "type": "boolean"
+          },
           "finishedAt": {
             "anyOf": [
               {
@@ -900,7 +906,8 @@
           "updatedAt",
           "startedAt",
           "finishedAt",
-          "outputFiles"
+          "outputFiles",
+          "executionSubmitted"
         ],
         "title": "PipelineJobRead",
         "type": "object"
@@ -2530,7 +2537,7 @@
     "/api/v1/auth/login": {
       "post": {
         "description": "Authenticate with email/password JSON body, OAuth2 form, or Google ID token.\n\n- Default: JSON ``LoginRequest`` body\n- ``?provider=google``: JSON ``GoogleLoginRequest`` with ``idToken``\n- ``application/x-www-form-urlencoded``: OAuth2 password form (Swagger)",
-        "operationId": "login_api_v1_auth_login_post",
+        "operationId": "login",
         "parameters": [
           {
             "in": "query",
@@ -2625,7 +2632,7 @@
     },
     "/api/v1/auth/logout": {
       "post": {
-        "operationId": "logout_api_v1_auth_logout_post",
+        "operationId": "logout",
         "responses": {
           "200": {
             "content": {
@@ -2652,7 +2659,7 @@
     "/api/v1/auth/me": {
       "get": {
         "description": "Current user and the workspaces they belong to, with their role in each.",
-        "operationId": "read_me_api_v1_auth_me_get",
+        "operationId": "read_me",
         "responses": {
           "200": {
             "content": {
@@ -2679,7 +2686,7 @@
     "/api/v1/auth/register": {
       "post": {
         "description": "Bootstrap user registration for local/dev environments.\nDisabled when APP_ENV=production. The new user belongs to no workspace: they create one\n(``POST /workspaces``) or are added to one by a workspace lead.",
-        "operationId": "register_bootstrap_user_api_v1_auth_register_post",
+        "operationId": "register_bootstrap_user",
         "parameters": [
           {
             "in": "query",
@@ -2733,7 +2740,7 @@
     "/api/v1/auth/tokens": {
       "get": {
         "description": "The current user's tokens, newest first, including revoked and expired ones.",
-        "operationId": "list_api_tokens_api_v1_auth_tokens_get",
+        "operationId": "list_api_tokens",
         "responses": {
           "200": {
             "content": {
@@ -2742,7 +2749,7 @@
                   "items": {
                     "$ref": "#/components/schemas/ApiTokenRead"
                   },
-                  "title": "Response List Api Tokens Api V1 Auth Tokens Get",
+                  "title": "Response List Api Tokens",
                   "type": "array"
                 }
               }
@@ -2762,7 +2769,7 @@
       },
       "post": {
         "description": "Issue a personal access token acting as the current user, with their per-workspace roles.\nRequires a login JWT: a personal access token cannot create another one.",
-        "operationId": "create_api_token_api_v1_auth_tokens_post",
+        "operationId": "create_api_token",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2809,7 +2816,7 @@
     "/api/v1/auth/tokens/{token_id}": {
       "delete": {
         "description": "Revoke a token (soft delete, audited). It stops working immediately.",
-        "operationId": "revoke_api_token_api_v1_auth_tokens__token_id__delete",
+        "operationId": "revoke_api_token",
         "parameters": [
           {
             "in": "path",
@@ -2857,7 +2864,7 @@
     },
     "/api/v1/fastq": {
       "get": {
-        "operationId": "list_fastq_api_v1_fastq_get",
+        "operationId": "list_fastq",
         "parameters": [
           {
             "in": "query",
@@ -2941,7 +2948,7 @@
                   "items": {
                     "$ref": "#/components/schemas/FastqRead"
                   },
-                  "title": "Response List Fastq Api V1 Fastq Get",
+                  "title": "Response List Fastq",
                   "type": "array"
                 }
               }
@@ -2972,7 +2979,7 @@
     },
     "/api/v1/fastq/register": {
       "post": {
-        "operationId": "register_fastq_api_v1_fastq_register_post",
+        "operationId": "register_fastq",
         "parameters": [
           {
             "in": "header",
@@ -3036,7 +3043,7 @@
     },
     "/api/v1/fastq/{fastq_id}": {
       "get": {
-        "operationId": "get_fastq_api_v1_fastq__fastq_id__get",
+        "operationId": "get_fastq",
         "parameters": [
           {
             "in": "path",
@@ -3100,7 +3107,7 @@
     },
     "/api/v1/fastq/{fastq_id}/verify": {
       "post": {
-        "operationId": "verify_fastq_api_v1_fastq__fastq_id__verify_post",
+        "operationId": "verify_fastq",
         "parameters": [
           {
             "in": "path",
@@ -3165,7 +3172,7 @@
     "/api/v1/members": {
       "get": {
         "description": "Members of the workspace named by the ``X-LabChain-Workspace`` header.",
-        "operationId": "list_members_api_v1_members_get",
+        "operationId": "list_members",
         "parameters": [
           {
             "in": "header",
@@ -3192,7 +3199,7 @@
                   "items": {
                     "$ref": "#/components/schemas/MemberRead"
                   },
-                  "title": "Response List Members Api V1 Members Get",
+                  "title": "Response List Members",
                   "type": "array"
                 }
               }
@@ -3221,7 +3228,7 @@
         ]
       },
       "post": {
-        "operationId": "add_member_api_v1_members_post",
+        "operationId": "add_member",
         "parameters": [
           {
             "in": "header",
@@ -3285,7 +3292,7 @@
     },
     "/api/v1/members/{user_id}": {
       "delete": {
-        "operationId": "remove_member_api_v1_members__user_id__delete",
+        "operationId": "remove_member",
         "parameters": [
           {
             "in": "path",
@@ -3340,7 +3347,7 @@
         ]
       },
       "patch": {
-        "operationId": "change_member_role_api_v1_members__user_id__patch",
+        "operationId": "change_member_role",
         "parameters": [
           {
             "in": "path",
@@ -3414,7 +3421,7 @@
     },
     "/api/v1/pipelines": {
       "get": {
-        "operationId": "get_pipelines_api_v1_pipelines_get",
+        "operationId": "get_pipelines",
         "parameters": [
           {
             "in": "header",
@@ -3441,7 +3448,7 @@
                   "items": {
                     "$ref": "#/components/schemas/PipelineCatalogItem"
                   },
-                  "title": "Response Get Pipelines Api V1 Pipelines Get",
+                  "title": "Response Get Pipelines",
                   "type": "array"
                 }
               }
@@ -3472,7 +3479,7 @@
     },
     "/api/v1/pipelines/{pipeline_id}": {
       "get": {
-        "operationId": "get_pipeline_by_id_api_v1_pipelines__pipeline_id__get",
+        "operationId": "get_pipeline_by_id",
         "parameters": [
           {
             "in": "path",
@@ -3535,7 +3542,7 @@
     },
     "/api/v1/results": {
       "get": {
-        "operationId": "list_results_api_v1_results_get",
+        "operationId": "list_results",
         "parameters": [
           {
             "in": "query",
@@ -3595,7 +3602,7 @@
                   "items": {
                     "$ref": "#/components/schemas/RunOutputFileRead"
                   },
-                  "title": "Response List Results Api V1 Results Get",
+                  "title": "Response List Results",
                   "type": "array"
                 }
               }
@@ -3626,7 +3633,7 @@
     },
     "/api/v1/results/runs/{run_id}": {
       "get": {
-        "operationId": "list_results_for_run_api_v1_results_runs__run_id__get",
+        "operationId": "list_results_for_run",
         "parameters": [
           {
             "in": "path",
@@ -3663,7 +3670,7 @@
                   "items": {
                     "$ref": "#/components/schemas/RunOutputFileRead"
                   },
-                  "title": "Response List Results For Run Api V1 Results Runs  Run Id  Get",
+                  "title": "Response List Results For Run",
                   "type": "array"
                 }
               }
@@ -3694,7 +3701,7 @@
     },
     "/api/v1/results/{output_id}/download": {
       "get": {
-        "operationId": "get_presigned_download_api_v1_results__output_id__download_get",
+        "operationId": "get_presigned_download",
         "parameters": [
           {
             "in": "path",
@@ -3758,7 +3765,7 @@
     },
     "/api/v1/runs": {
       "get": {
-        "operationId": "list_runs_api_v1_runs_get",
+        "operationId": "list_runs",
         "parameters": [
           {
             "in": "query",
@@ -3841,7 +3848,7 @@
                   "items": {
                     "$ref": "#/components/schemas/PipelineJobRead"
                   },
-                  "title": "Response List Runs Api V1 Runs Get",
+                  "title": "Response List Runs",
                   "type": "array"
                 }
               }
@@ -3871,7 +3878,7 @@
       },
       "post": {
         "description": "Build the samplesheet from the selected samples' verified FASTQ files, store it in S3 and\nsubmit the Nextflow head job to AWS Batch. With AWS Batch disabled the run is recorded\nas ``pending`` and not executed.",
-        "operationId": "launch_run_api_v1_runs_post",
+        "operationId": "launch_run",
         "parameters": [
           {
             "in": "header",
@@ -3935,7 +3942,7 @@
     },
     "/api/v1/runs/{run_id}": {
       "get": {
-        "operationId": "get_run_api_v1_runs__run_id__get",
+        "operationId": "get_run",
         "parameters": [
           {
             "in": "path",
@@ -4000,7 +4007,7 @@
     "/api/v1/runs/{run_id}/events": {
       "post": {
         "description": "Endpoint passed to Nextflow as ``-with-weblog``. Authenticated by the per-run token in\nthe URL (Nextflow cannot send headers); not workspace-scoped and not for API clients.",
-        "operationId": "receive_weblog_event_api_v1_runs__run_id__events_post",
+        "operationId": "receive_weblog_event",
         "parameters": [
           {
             "in": "path",
@@ -4058,7 +4065,7 @@
     "/api/v1/runs/{run_id}/logs": {
       "get": {
         "description": "Run log as JSON lines, for clients that poll instead of using the SSE stream.",
-        "operationId": "get_run_logs_api_v1_runs__run_id__logs_get",
+        "operationId": "get_run_logs",
         "parameters": [
           {
             "in": "path",
@@ -4108,7 +4115,7 @@
                   "items": {
                     "$ref": "#/components/schemas/RunLogLine"
                   },
-                  "title": "Response Get Run Logs Api V1 Runs  Run Id  Logs Get",
+                  "title": "Response Get Run Logs",
                   "type": "array"
                 }
               }
@@ -4140,7 +4147,7 @@
     "/api/v1/runs/{run_id}/logs/stream": {
       "get": {
         "description": "Server-sent events: ``log`` for each run log line as it is written, ``status`` when the\nrun status changes, ``end`` once the run is finished, was never submitted, or after an\nhour.",
-        "operationId": "stream_run_logs_api_v1_runs__run_id__logs_stream_get",
+        "operationId": "stream_run_logs",
         "parameters": [
           {
             "in": "path",
@@ -4202,7 +4209,7 @@
     },
     "/api/v1/samples": {
       "get": {
-        "operationId": "list_samples_api_v1_samples_get",
+        "operationId": "list_samples",
         "parameters": [
           {
             "in": "query",
@@ -4316,7 +4323,7 @@
                   "items": {
                     "$ref": "#/components/schemas/SampleRead"
                   },
-                  "title": "Response List Samples Api V1 Samples Get",
+                  "title": "Response List Samples",
                   "type": "array"
                 }
               }
@@ -4345,7 +4352,7 @@
         ]
       },
       "post": {
-        "operationId": "create_sample_api_v1_samples_post",
+        "operationId": "create_sample",
         "parameters": [
           {
             "in": "header",
@@ -4409,7 +4416,7 @@
     },
     "/api/v1/samples/bulk": {
       "delete": {
-        "operationId": "bulk_delete_samples_api_v1_samples_bulk_delete",
+        "operationId": "bulk_delete_samples",
         "parameters": [
           {
             "in": "header",
@@ -4446,7 +4453,7 @@
                   "additionalProperties": {
                     "type": "integer"
                   },
-                  "title": "Response Bulk Delete Samples Api V1 Samples Bulk Delete",
+                  "title": "Response Bulk Delete Samples",
                   "type": "object"
                 }
               }
@@ -4475,7 +4482,7 @@
         ]
       },
       "patch": {
-        "operationId": "bulk_patch_samples_api_v1_samples_bulk_patch",
+        "operationId": "bulk_patch_samples",
         "parameters": [
           {
             "in": "header",
@@ -4512,7 +4519,7 @@
                   "items": {
                     "$ref": "#/components/schemas/SampleRead"
                   },
-                  "title": "Response Bulk Patch Samples Api V1 Samples Bulk Patch",
+                  "title": "Response Bulk Patch Samples",
                   "type": "array"
                 }
               }
@@ -4544,7 +4551,7 @@
     "/api/v1/samples/import": {
       "post": {
         "description": "Import samples from a UTF-8 CSV. Columns are the ``SampleCreate`` fields, in camelCase\n(``sampleCode``) or snake_case (``sample_code``). Rows with a sample code that already\nexists in the workspace, or appears twice in the file, are skipped and reported.",
-        "operationId": "import_samples_csv_api_v1_samples_import_post",
+        "operationId": "import_samples_csv",
         "parameters": [
           {
             "in": "header",
@@ -4567,7 +4574,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_import_samples_csv_api_v1_samples_import_post"
+                "$ref": "#/components/schemas/Body_import_samples_csv"
               }
             }
           },
@@ -4608,7 +4615,7 @@
     },
     "/api/v1/samples/{sample_id}": {
       "delete": {
-        "operationId": "delete_sample_api_v1_samples__sample_id__delete",
+        "operationId": "delete_sample",
         "parameters": [
           {
             "in": "path",
@@ -4663,7 +4670,7 @@
         ]
       },
       "get": {
-        "operationId": "get_sample_api_v1_samples__sample_id__get",
+        "operationId": "get_sample",
         "parameters": [
           {
             "in": "path",
@@ -4725,7 +4732,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_sample_api_v1_samples__sample_id__patch",
+        "operationId": "update_sample",
         "parameters": [
           {
             "in": "path",
@@ -4799,7 +4806,7 @@
     },
     "/api/v1/sequencing-runs": {
       "get": {
-        "operationId": "list_sequencing_runs_api_v1_sequencing_runs_get",
+        "operationId": "list_sequencing_runs",
         "parameters": [
           {
             "in": "query",
@@ -4849,7 +4856,7 @@
                   "items": {
                     "$ref": "#/components/schemas/SequencingRunRead"
                   },
-                  "title": "Response List Sequencing Runs Api V1 Sequencing Runs Get",
+                  "title": "Response List Sequencing Runs",
                   "type": "array"
                 }
               }
@@ -4878,7 +4885,7 @@
         ]
       },
       "post": {
-        "operationId": "create_sequencing_run_api_v1_sequencing_runs_post",
+        "operationId": "create_sequencing_run",
         "parameters": [
           {
             "in": "header",
@@ -4942,7 +4949,7 @@
     },
     "/api/v1/sequencing-runs/{run_id}": {
       "get": {
-        "operationId": "get_sequencing_run_api_v1_sequencing_runs__run_id__get",
+        "operationId": "get_sequencing_run",
         "parameters": [
           {
             "in": "path",
@@ -5006,7 +5013,7 @@
     },
     "/api/v1/workspaces": {
       "get": {
-        "operationId": "list_my_workspaces_api_v1_workspaces_get",
+        "operationId": "list_my_workspaces",
         "responses": {
           "200": {
             "content": {
@@ -5015,7 +5022,7 @@
                   "items": {
                     "$ref": "#/components/schemas/WorkspaceRead"
                   },
-                  "title": "Response List My Workspaces Api V1 Workspaces Get",
+                  "title": "Response List My Workspaces",
                   "type": "array"
                 }
               }
@@ -5035,7 +5042,7 @@
       },
       "post": {
         "description": "Create a workspace. The creator becomes its first ``bioinformatics_lead``.",
-        "operationId": "create_workspace_api_v1_workspaces_post",
+        "operationId": "create_workspace",
         "requestBody": {
           "content": {
             "application/json": {
@@ -5081,7 +5088,7 @@
     },
     "/health": {
       "get": {
-        "operationId": "health_health_get",
+        "operationId": "health",
         "responses": {
           "200": {
             "content": {
@@ -5090,7 +5097,7 @@
                   "additionalProperties": {
                     "type": "string"
                   },
-                  "title": "Response Health Health Get",
+                  "title": "Response Health",
                   "type": "object"
                 }
               }
