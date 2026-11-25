@@ -1,6 +1,14 @@
 # DELETE /api/v1/samples/bulk
 
-Delete multiple samples by id. Missing ids are skipped.
+Delete multiple samples by id (soft delete, one `bulk_delete` audit entry per sample). Ids
+that are unknown, already deleted or in another workspace are skipped.
+
+!!! note "Soft delete"
+    Samples are regulated records (21 CFR Part 11): deleting one does not remove it. The sample
+    disappears from every endpoint (`404`, absent from listings, unusable for FASTQ or runs),
+    but its row, its links to FASTQ files and run outputs, and its audit trail are kept.
+    Its sample code stays reserved: creating or importing a sample with the same code answers
+    `409` (create) or is skipped (import).
 
 | | |
 | --- | --- |
@@ -18,7 +26,7 @@ Delete multiple samples by id. Missing ids are skipped.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `deleted` | `int` | Number of rows deleted |
+| `deleted` | `int` | Number of samples deleted by this request |
 
 ## Example
 
