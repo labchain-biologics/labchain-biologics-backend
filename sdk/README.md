@@ -107,6 +107,7 @@ The SDK lives in the backend repository so API and client change together:
 
 ```bash
 uv sync --all-packages --extra dev
-uv run --package labchain-biologics-sdk pytest sdk/tests
-uv run --package labchain-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests
+uv run poe sdk-test        # unit + contract tests (SDK vs openapi.json)
+uv run poe test            # includes tests/integration/test_sdk.py (SDK against the real app)
+uv run poe sdk-typecheck
 ```

@@ -80,7 +80,7 @@ plugins = ["pydantic.mypy"]
 
 [tool.poe.tasks]
 test = { cmd = "uv run pytest", help = "Run the test suite" }
-e2e = { cmd = "uv run python scripts/e2e_api_walkthrough.py", help = "Test end-to-end API functionnalities" }
+e2e = { cmd = "uv run --package labchain-biologics-sdk python scripts/e2e_api_walkthrough.py", help = "End-to-end API walkthrough through the Python SDK (running API required)" }
 check = { cmd = "uv run pre-commit run --all-files", help = "Run pre-commit hooks" }
 migrate = { cmd = "uv run alembic upgrade head", help = "Apply database migrations" }
 start-local-run = { cmd = "docker compose --env-file .env up -d", help = "Launch local run" }

@@ -13,7 +13,7 @@ uv run poe migrate             # alembic upgrade head
 uv run poe start-dev           # API on :8000 (reload)
 uv run poe test                # pytest
 uv run poe check               # pre-commit: ruff, ruff-format, mypy --strict, markdownlint
-uv run poe e2e                 # end-to-end walkthrough against a running API
+uv run poe e2e                 # end-to-end walkthrough via the SDK against a running API
 uv run poe docs-serve          # MkDocs (needs --extra docs)
 uv sync --all-packages --extra dev   # also installs the Python SDK (sdk/)
 uv run poe sdk-test            # SDK tests (no network)
@@ -39,6 +39,9 @@ uv run poe sdk-typecheck       # mypy --strict on the SDK
 - Never log or `repr()` tokens or signed storage URLs; signed URLs never receive the API
   `Authorization` header.
 - Unit tests use `httpx.MockTransport` (`sdk/tests/fakes.py`), no network.
+- `sdk/tests/test_contract.py` checks SDK models, enums and operations against `openapi.json`:
+  regenerate the contract (`poe openapi`) and update the SDK together.
+- `tests/integration/test_sdk.py` drives the real app over HTTP (uvicorn thread) with the SDK.
 
 ## Rules
 
