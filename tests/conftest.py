@@ -12,7 +12,7 @@ import pytest
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-that-is-at-least-32-characters-long")
 
-from app.models.user import Role, User
+from app.models.user import User
 
 
 @pytest.fixture
@@ -22,7 +22,6 @@ def sample_user() -> User:
         email="lead@labchain.example",
         full_name="Bio Lead",
         hashed_password="hashed",
-        role=Role.bioinformatics_lead,
         is_active=True,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -37,7 +36,6 @@ def lab_technician() -> User:
         email="tech@labchain.example",
         full_name="Lab Tech",
         hashed_password="hashed",
-        role=Role.lab_technician,
         is_active=True,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),

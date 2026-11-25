@@ -24,7 +24,7 @@ Python **3.11+** required. Package manager: [uv](https://docs.astral.sh/uv/).
 - Run status + SSE log streaming
 - Result downloads (VCF, BAM, MultiQC, etc.)
 - RBAC: `lab_technician` vs `bioinformatics_lead`
-- Multi-tenant workspace via `X-LabChain-Workspace`
+- Multi-tenant workspaces with per-workspace roles (`X-LabChain-Workspace` = workspace slug)
 - Append-only audit trail on mutations
 
 ## Next steps

@@ -96,3 +96,41 @@ def test_ensure_bucket_raises_on_boto_core_error(
     mock_s3_client.head_bucket.side_effect = EndpointConnectionError(endpoint_url="http://s3.local")
     with pytest.raises(EndpointConnectionError):
         s3_service.ensure_bucket()
+
+
+def test_apply_cors_allows_given_origins(mock_s3_client: MagicMock) -> None:
+    service = S3Service(client=mock_s3_client)
+    service.apply_cors(["http://localhost:8080"])
+    config = mock_s3_client.put_bucket_cors.call_args.kwargs["CORSConfiguration"]
+    rule = config["CORSRules"][0]
+    assert rule["AllowedOrigins"] == ["http://localhost:8080"]
+    assert "PUT" in rule["AllowedMethods"]
+
+
+def test_object_checksum_uses_single_part_etag(mock_s3_client: MagicMock) -> None:
+    mock_s3_client.head_object.return_value = {
+        "ContentLength": 4,
+        "ETag": '"098F6BCD4621D373CADE4E832627B4F6"',
+    }
+    checksum = S3Service(client=mock_s3_client).object_checksum("k")
+    assert checksum is not None
+    assert checksum.md5 == "098f6bcd4621d373cade4e832627b4f6"
+    assert checksum.size_bytes == 4
+    mock_s3_client.get_object.assert_not_called()
+
+
+def test_object_checksum_hashes_multipart_objects(mock_s3_client: MagicMock) -> None:
+    mock_s3_client.head_object.return_value = {"ContentLength": 4, "ETag": '"abc-2"'}
+    body = MagicMock()
+    body.iter_chunks.return_value = [b"te", b"st"]
+    mock_s3_client.get_object.return_value = {"Body": body}
+    checksum = S3Service(client=mock_s3_client).object_checksum("k")
+    assert checksum is not None
+    assert checksum.md5 == "098f6bcd4621d373cade4e832627b4f6"  # md5("test")
+
+
+def test_object_checksum_missing_object(mock_s3_client: MagicMock) -> None:
+    mock_s3_client.head_object.side_effect = ClientError(
+        {"Error": {"Code": "404", "Message": "Not Found"}}, "HeadObject"
+    )
+    assert S3Service(client=mock_s3_client).object_checksum("k") is None

@@ -1,4 +1,4 @@
-"""FastAPI dependencies: DB session, auth, RBAC, workspace header."""
+"""FastAPI dependencies: DB session, auth, workspace membership, RBAC."""
 
 from __future__ import annotations
 
@@ -15,6 +15,10 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import Role, User
+from app.models.workspace import Workspace as WorkspaceModel
+from app.models.workspace import WorkspaceMembership
+
+WORKSPACE_HEADER = "X-LabChain-Workspace"
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{settings.api_v1_prefix}/auth/login",
@@ -22,21 +26,20 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
-async def get_workspace(
-    x_labchain_workspace: Annotated[str | None, Header(alias="X-LabChain-Workspace")] = None,
-) -> str:
-    if x_labchain_workspace is None:
+def parse_workspace_header(value: str | None) -> str:
+    """Validate the raw workspace header and return the workspace slug."""
+    if value is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="X-LabChain-Workspace header is required",
+            detail=f"{WORKSPACE_HEADER} header is required",
         )
-    workspace = x_labchain_workspace.strip()
-    if workspace == "":
+    slug = value.strip()
+    if slug == "":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="X-LabChain-Workspace header must not be empty",
+            detail=f"{WORKSPACE_HEADER} header must not be empty",
         )
-    return workspace
+    return slug
 
 
 async def get_current_user(
@@ -64,21 +67,62 @@ async def get_current_user(
     return user
 
 
+async def get_membership(
+    x_labchain_workspace: Annotated[str | None, Header(alias=WORKSPACE_HEADER)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> WorkspaceMembership:
+    """
+    Resolve the workspace header to a membership of the current user.
+
+    A workspace that does not exist, is inactive, or that the user is not a member of all
+    yield the same 404, so the API never reveals which workspaces exist.
+    """
+    slug = parse_workspace_header(x_labchain_workspace)
+    result = await db.execute(
+        select(WorkspaceMembership)
+        .join(WorkspaceModel, WorkspaceMembership.workspace_id == WorkspaceModel.id)
+        .where(
+            WorkspaceModel.slug == slug,
+            WorkspaceModel.is_active.is_(True),
+            WorkspaceMembership.user_id == current_user.id,
+        )
+    )
+    membership = result.scalar_one_or_none()
+    if membership is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Workspace '{slug}' not found",
+        )
+    return membership
+
+
+async def get_workspace(
+    membership: Annotated[WorkspaceMembership, Depends(get_membership)],
+) -> str:
+    """Slug of the workspace the current user is a verified member of."""
+    return membership.workspace.slug
+
+
 class RequireRole:
-    """Dependency enforcing that the authenticated user has one of the allowed roles."""
+    """Require the current user to hold one of ``roles`` in the requested workspace."""
 
     def __init__(self, *roles: Role | str) -> None:
         self.allowed_roles: set[Role] = {
             role if isinstance(role, Role) else Role(role) for role in roles
         }
 
-    async def __call__(self, current_user: Annotated[User, Depends(get_current_user)]) -> User:
-        if current_user.role not in self.allowed_roles:
+    async def __call__(
+        self,
+        membership: Annotated[WorkspaceMembership, Depends(get_membership)],
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        if membership.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=(
-                    f"Role '{current_user.role.value}' is not permitted. "
-                    f"Required: {[role.value for role in self.allowed_roles]}"
+                    f"Role '{membership.role.value}' is not permitted in this workspace. "
+                    f"Required: {sorted(role.value for role in self.allowed_roles)}"
                 ),
             )
         return current_user
@@ -89,6 +133,7 @@ require_bioinformatics_lead = RequireRole(Role.bioinformatics_lead)
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
+Membership = Annotated[WorkspaceMembership, Depends(get_membership)]
 Workspace = Annotated[str, Depends(get_workspace)]
 LabOrLead = Annotated[User, Depends(require_lab_or_lead)]
 BioinformaticsLead = Annotated[User, Depends(require_bioinformatics_lead)]

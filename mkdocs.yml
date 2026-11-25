@@ -67,6 +67,9 @@ nav:
           - GET /auth/me: api/auth/me.md
           - POST /auth/logout: api/auth/logout.md
           - POST /auth/register: api/auth/register.md
+      - Workspaces:
+          - GET/POST /workspaces: api/workspaces/create.md
+          - /members: api/workspaces/members.md
       - Samples:
           - GET /samples: api/samples/list.md
           - POST /samples: api/samples/create.md
@@ -76,7 +79,10 @@ nav:
           - GET /samples/{id}: api/samples/get.md
           - PATCH /samples/{id}: api/samples/update.md
           - DELETE /samples/{id}: api/samples/delete.md
+      - Sequencing runs:
+          - /sequencing-runs: api/sequencing-runs/index.md
       - FASTQ:
+          - GET /fastq: api/fastq/list.md
           - POST /fastq/register: api/fastq/register.md
           - POST /fastq/{id}/verify: api/fastq/verify.md
       - Pipelines:
@@ -87,6 +93,7 @@ nav:
           - GET /runs: api/runs/list.md
           - GET /runs/{id}: api/runs/get.md
           - GET /runs/{id}/logs/stream: api/runs/logs-stream.md
+          - Logs & Nextflow events: api/runs/events.md
       - Results:
           - GET /results: api/results/list.md
           - GET /results/runs/{id}: api/results/by-run.md

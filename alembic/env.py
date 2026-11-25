@@ -20,6 +20,8 @@ from app.models import (  # noqa: F401 — register metadata
     Sample,
     SequencingRun,
     User,
+    Workspace,
+    WorkspaceMembership,
 )
 
 config = context.config

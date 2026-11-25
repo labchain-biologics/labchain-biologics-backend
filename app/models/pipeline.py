@@ -41,9 +41,12 @@ class SequencingRun(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     run_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    workspace: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    workspace: Mapped[str] = mapped_column(
+        String(128), ForeignKey("workspaces.slug"), index=True, nullable=False
+    )
     instrument: Mapped[str | None] = mapped_column(String(128), nullable=True)
     flowcell_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    read_length: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -68,7 +71,9 @@ class FastqFile(Base):
     sample_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("samples.id", ondelete="SET NULL"), nullable=True
     )
-    workspace: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    workspace: Mapped[str] = mapped_column(
+        String(128), ForeignKey("workspaces.slug"), index=True, nullable=False
+    )
     filename: Mapped[str] = mapped_column(String(512), nullable=False)
     s3_key: Mapped[str] = mapped_column(String(1024), nullable=False)
     size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
@@ -91,7 +96,9 @@ class PipelineJob(Base):
     __tablename__ = "pipeline_jobs"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    workspace: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    workspace: Mapped[str] = mapped_column(
+        String(128), ForeignKey("workspaces.slug"), index=True, nullable=False
+    )
     pipeline_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     pipeline_name: Mapped[str] = mapped_column(String(255), nullable=False)
     pipeline_version: Mapped[str] = mapped_column(String(64), nullable=False, default="latest")
@@ -111,6 +118,10 @@ class PipelineJob(Base):
     aws_batch_job_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     nextflow_run_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     work_dir: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    output_dir: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    samplesheet_uri: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    # Execution progress reported by Nextflow weblog events (process counts, current process).
+    progress: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     log_buffer: Mapped[str] = mapped_column(Text, nullable=False, default="")
     launched_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -141,7 +152,9 @@ class RunOutputFile(Base):
         nullable=False,
         index=True,
     )
-    workspace: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    workspace: Mapped[str] = mapped_column(
+        String(128), ForeignKey("workspaces.slug"), index=True, nullable=False
+    )
     file_type: Mapped[OutputFileType] = mapped_column(
         Enum(OutputFileType, name="output_file_type", native_enum=True),
         nullable=False,

@@ -4,7 +4,7 @@ Record a logout audit event. Clients should discard the JWT locally (stateless t
 
 | | |
 | --- | --- |
-| Auth | Bearer + workspace |
+| Auth | Bearer |
 | Role | Any authenticated user |
 | Success | `200 OK` |
 
@@ -17,7 +17,6 @@ No body.
 | Header | Required |
 | --- | --- |
 | `Authorization: Bearer <token>` | yes |
-| `X-LabChain-Workspace` | yes |
 
 ## Response model (`LogoutResponse`)
 
@@ -29,8 +28,7 @@ No body.
 
 ```bash
 curl -s -X POST 'http://localhost:8000/api/v1/auth/logout' \
-  -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo'
+  -H 'Authorization: Bearer <access_token>'
 ```
 
 ```json

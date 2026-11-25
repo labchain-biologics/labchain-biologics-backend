@@ -20,7 +20,7 @@ class AuditService:
         *,
         action: str,
         entity_type: str,
-        workspace: str,
+        workspace: str | None,
         actor: User | None = None,
         entity_id: str | uuid.UUID | None = None,
         before_state: dict[str, Any] | None = None,

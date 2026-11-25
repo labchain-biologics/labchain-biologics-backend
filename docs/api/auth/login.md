@@ -4,12 +4,13 @@ Authenticate with email/password, Google ID token, or OAuth2 form. Returns a JWT
 
 | | |
 | --- | --- |
-| Auth | Workspace header only |
+| Auth | None |
 | Role | — |
 | Success | `200 OK` |
 
 !!! note "Workspace"
-    Send `X-LabChain-Workspace` for audit scoping (login is audited).
+    Login is not workspace-scoped: no `X-LabChain-Workspace` header is needed. The login is
+    audited with an empty workspace. Use [`GET /auth/me`](me.md) to list the user's workspaces.
 
 ## Request model
 
@@ -17,7 +18,6 @@ Authenticate with email/password, Google ID token, or OAuth2 form. Returns a JWT
 
 | Header | Required | Description |
 | --- | --- | --- |
-| `X-LabChain-Workspace` | yes | Workspace id |
 | `Content-Type` | yes | `application/json` or form |
 
 ### Query
@@ -56,7 +56,6 @@ Authenticate with email/password, Google ID token, or OAuth2 form. Returns a JWT
 ```bash
 curl -s -X POST 'http://localhost:8000/api/v1/auth/login' \
   -H 'Content-Type: application/json' \
-  -H 'X-LabChain-Workspace: demo' \
   -d '{
     "email": "tech@labchain.example",
     "password": "changeme123"

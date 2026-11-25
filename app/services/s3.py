@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, cast
 
@@ -27,6 +29,21 @@ def get_s3_client() -> S3Client:
     return cast(S3Client, boto3.client(**client_kwargs))
 
 
+_MD5_CHUNK_BYTES = 8 * 1024 * 1024
+
+
+@dataclass(frozen=True, slots=True)
+class StoredObject:
+    key: str
+    size_bytes: int
+
+
+@dataclass(frozen=True, slots=True)
+class ObjectChecksum:
+    md5: str
+    size_bytes: int
+
+
 class S3Service:
     def __init__(self, client: S3Client | None = None) -> None:
         self._client = client or get_s3_client()
@@ -46,6 +63,23 @@ class S3Service:
                     "LocationConstraint": settings.aws_region
                 }
             self._client.create_bucket(**create_kwargs)
+
+    def apply_cors(self, origins: list[str]) -> None:
+        """Allow browsers on ``origins`` to PUT/GET objects through presigned URLs."""
+        self._client.put_bucket_cors(
+            Bucket=self._bucket,
+            CORSConfiguration={
+                "CORSRules": [
+                    {
+                        "AllowedOrigins": origins,
+                        "AllowedMethods": ["GET", "PUT", "HEAD"],
+                        "AllowedHeaders": ["*"],
+                        "ExposeHeaders": ["ETag", "x-amz-request-id"],
+                        "MaxAgeSeconds": 3000,
+                    }
+                ]
+            },
+        )
 
     def build_object_key(self, workspace: str, prefix: str, filename: str) -> str:
         safe_name = filename.lstrip("/")
@@ -93,6 +127,59 @@ class S3Service:
             if error_code in {"404", "NoSuchKey", "NotFound"}:
                 return False
             raise
+
+    def uri(self, key: str) -> str:
+        return f"s3://{self._bucket}/{key}"
+
+    def key_from_uri(self, uri: str) -> str:
+        prefix = f"s3://{self._bucket}/"
+        if not uri.startswith(prefix):
+            raise ValueError(f"{uri} is not in bucket {self._bucket}")
+        return uri[len(prefix) :]
+
+    def put_text(self, key: str, body: str, *, content_type: str = "text/plain") -> str:
+        """Store a small text object and return its ``s3://`` URI."""
+        self._client.put_object(
+            Bucket=self._bucket, Key=key, Body=body.encode("utf-8"), ContentType=content_type
+        )
+        return self.uri(key)
+
+    def list_objects(self, prefix: str, *, limit: int = 5000) -> list[StoredObject]:
+        """All objects under ``prefix`` (paginated), up to ``limit``."""
+        found: list[StoredObject] = []
+        paginator = self._client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=self._bucket, Prefix=prefix):
+            for item in page.get("Contents", []):
+                found.append(StoredObject(key=item["Key"], size_bytes=int(item.get("Size", 0))))
+                if len(found) >= limit:
+                    return found
+        return found
+
+    def object_checksum(self, key: str) -> ObjectChecksum | None:
+        """
+        MD5 and size of a stored object, or ``None`` if it does not exist.
+
+        A single-part upload's ETag is the MD5 of its content, so it is used directly.
+        Multipart uploads have a composite ETag (``<hash>-<parts>``): the object is then
+        streamed and hashed.
+        """
+        try:
+            head = self._client.head_object(Bucket=self._bucket, Key=key)
+        except ClientError as exc:
+            error_code = str(exc.response.get("Error", {}).get("Code", ""))
+            if error_code in {"404", "NoSuchKey", "NotFound"}:
+                return None
+            raise
+        size = int(head.get("ContentLength", 0))
+        etag = str(head.get("ETag", "")).strip('"')
+        if etag and "-" not in etag and len(etag) == 32:
+            return ObjectChecksum(md5=etag.lower(), size_bytes=size)
+
+        digest = hashlib.md5(usedforsecurity=False)
+        body = self._client.get_object(Bucket=self._bucket, Key=key)["Body"]
+        for chunk in body.iter_chunks(chunk_size=_MD5_CHUNK_BYTES):
+            digest.update(chunk)
+        return ObjectChecksum(md5=digest.hexdigest(), size_bytes=size)
 
 
 s3_service = S3Service()

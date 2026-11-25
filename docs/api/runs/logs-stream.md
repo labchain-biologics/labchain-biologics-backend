@@ -1,6 +1,8 @@
 # GET /api/v1/runs/{run_id}/logs/stream
 
-Server-Sent Events (SSE) stream of run logs.
+Server-Sent Events (SSE) stream of the run log, read from the database every 2 seconds:
+past lines first, then new lines as they are written. The stream ends when the run is
+finished, was never submitted (execution disabled), or after one hour.
 
 | | |
 | --- | --- |
@@ -25,7 +27,7 @@ Events are not a JSON schema envelope; each SSE message has:
 | Field | Description |
 | --- | --- |
 | `event` | `log`, `status`, or `end` |
-| `data` | Log line, status value, or `stream-complete` |
+| `data` | Log line, status value, or (for `end`) the final status / `run-not-found` |
 | `id` | Monotonic event id |
 
 ## Example

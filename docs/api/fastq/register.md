@@ -1,6 +1,8 @@
 # POST /api/v1/fastq/register
 
-Register a FastQ object and receive an S3 presigned upload URL.
+Register a FastQ object and receive an S3 presigned upload URL. `sampleId` and
+`sequencingRunId` must belong to the current workspace (`422` otherwise). A linked sample in
+status `registered` moves to `fastq_received`.
 
 | | |
 | --- | --- |

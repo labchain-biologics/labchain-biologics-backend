@@ -12,7 +12,8 @@ from pydantic import ValidationError
 from sqlalchemy import select
 
 from app.api.deps import DbSession, LabOrLead, Workspace
-from app.models.sample import OmicsModality, QcStatus, Sample
+from app.models.sample import OmicsModality, QcStatus, Sample, SampleAssay, SampleStatus
+from app.models.user import User
 from app.schemas.sample import (
     SampleBulkDeleteRequest,
     SampleBulkPatchRequest,
@@ -27,17 +28,8 @@ router = APIRouter(prefix="/samples", tags=["samples"])
 
 
 def _sample_to_dict(sample: Sample) -> dict[str, Any]:
-    return {
-        "id": str(sample.id),
-        "sampleCode": sample.sample_code,
-        "workspace": sample.workspace,
-        "modality": sample.modality.value,
-        "rinDin": sample.rin_din,
-        "concentrationNgUl": sample.concentration_ng_ul,
-        "qcStatus": sample.qc_status.value,
-        "patientId": sample.patient_id,
-        "projectCode": sample.project_code,
-    }
+    """Full JSON snapshot of a sample for the audit trail (camelCase, like the API)."""
+    return SampleRead.model_validate(sample).model_dump(mode="json", by_alias=True)
 
 
 def _apply_update(sample: Sample, patch: SampleUpdate) -> None:
@@ -59,10 +51,69 @@ async def _get_workspace_sample(db: DbSession, workspace: str, sample_id: uuid.U
     return sample
 
 
-def _optional_float(value: object) -> float | None:
-    if value is None or value == "":
-        return None
-    return float(value)  # type: ignore[arg-type]
+async def _existing_codes(db: DbSession, workspace: str, codes: set[str]) -> set[str]:
+    if not codes:
+        return set()
+    result = await db.execute(
+        select(Sample.sample_code).where(
+            Sample.workspace == workspace, Sample.sample_code.in_(codes)
+        )
+    )
+    return set(result.scalars().all())
+
+
+async def _ensure_code_available(
+    db: DbSession, workspace: str, code: str, *, exclude_id: uuid.UUID | None = None
+) -> None:
+    stmt = select(Sample.id).where(Sample.workspace == workspace, Sample.sample_code == code)
+    if exclude_id is not None:
+        stmt = stmt.where(Sample.id != exclude_id)
+    if (await db.execute(stmt)).first() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Sample code '{code}' already exists in workspace '{workspace}'",
+        )
+
+
+async def _update_with_audit(
+    db: DbSession,
+    workspace: str,
+    sample: Sample,
+    patch: SampleUpdate,
+    *,
+    action: str,
+    actor: User,
+) -> Sample:
+    if patch.sample_code is not None and patch.sample_code != sample.sample_code:
+        await _ensure_code_available(db, workspace, patch.sample_code, exclude_id=sample.id)
+    before = _sample_to_dict(sample)
+    _apply_update(sample, patch)
+    await db.flush()
+    await audit_service.record(
+        db,
+        actor=actor,
+        action=action,
+        entity_type="sample",
+        entity_id=sample.id,
+        workspace=workspace,
+        before_state=before,
+        after_state=_sample_to_dict(sample),
+    )
+    return sample
+
+
+def _csv_row_payload(row: dict[str, str | None]) -> dict[str, Any]:
+    """Map a CSV row to ``SampleCreate`` input. Columns may use camelCase or snake_case."""
+    payload: dict[str, Any] = {}
+    for name, field in SampleCreate.model_fields.items():
+        if name == "metadata_json":
+            continue
+        alias = field.alias or name
+        value = row.get(alias) or row.get(name)
+        if value not in (None, ""):
+            payload[alias] = value
+    payload.setdefault("qcStatus", QcStatus.pending.value)
+    return payload
 
 
 @router.get("", response_model=list[SampleRead])
@@ -71,6 +122,8 @@ async def list_samples(
     workspace: Workspace,
     _: LabOrLead,
     modality: OmicsModality | None = None,
+    assay: SampleAssay | None = None,
+    sample_status: SampleStatus | None = Query(default=None, alias="status"),
     qc_status: QcStatus | None = Query(default=None, alias="qcStatus"),
     limit: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
@@ -78,6 +131,10 @@ async def list_samples(
     stmt = select(Sample).where(Sample.workspace == workspace)
     if modality is not None:
         stmt = stmt.where(Sample.modality == modality)
+    if assay is not None:
+        stmt = stmt.where(Sample.assay == assay)
+    if sample_status is not None:
+        stmt = stmt.where(Sample.status == sample_status)
     if qc_status is not None:
         stmt = stmt.where(Sample.qc_status == qc_status)
     stmt = stmt.order_by(Sample.created_at.desc()).offset(offset).limit(limit)
@@ -92,8 +149,11 @@ async def create_sample(
     workspace: Workspace,
     current_user: LabOrLead,
 ) -> Sample:
+    await _ensure_code_available(db, workspace, payload.sample_code)
     sample = Sample(
         workspace=workspace,
+        status=SampleStatus.registered,
+        created_by=current_user.id,
         **payload.model_dump(),
     )
     db.add(sample)
@@ -117,6 +177,11 @@ async def import_samples_csv(
     current_user: LabOrLead,
     file: UploadFile = File(...),
 ) -> SampleImportResult:
+    """
+    Import samples from a UTF-8 CSV. Columns are the ``SampleCreate`` fields, in camelCase
+    (``sampleCode``) or snake_case (``sample_code``). Rows with a sample code that already
+    exists in the workspace, or appears twice in the file, are skipped and reported.
+    """
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -138,10 +203,9 @@ async def import_samples_csv(
             detail="CSV is empty or missing a header row",
         )
 
-    created_samples: list[Sample] = []
+    parsed: list[tuple[int, SampleCreate]] = []
     errors: list[str] = []
     skipped = 0
-
     for row_number, row in enumerate(reader, start=2):
         normalized = {
             key.strip(): (value.strip() if isinstance(value, str) else value)
@@ -149,44 +213,25 @@ async def import_samples_csv(
             if key
         }
         try:
-            create_payload = SampleCreate.model_validate(
-                {
-                    "sampleCode": normalized.get("sampleCode") or normalized.get("sample_code"),
-                    "patientId": normalized.get("patientId")
-                    or normalized.get("patient_id")
-                    or None,
-                    "projectCode": normalized.get("projectCode")
-                    or normalized.get("project_code")
-                    or None,
-                    "modality": normalized.get("modality"),
-                    "tissueType": normalized.get("tissueType")
-                    or normalized.get("tissue_type")
-                    or None,
-                    "collectionDate": normalized.get("collectionDate")
-                    or normalized.get("collection_date")
-                    or None,
-                    "rinDin": _optional_float(
-                        normalized.get("rinDin") or normalized.get("rin_din")
-                    ),
-                    "concentrationNgUl": _optional_float(
-                        normalized.get("concentrationNgUl") or normalized.get("concentration_ng_ul")
-                    ),
-                    "volumeUl": _optional_float(
-                        normalized.get("volumeUl") or normalized.get("volume_ul")
-                    ),
-                    "qcStatus": normalized.get("qcStatus")
-                    or normalized.get("qc_status")
-                    or "pending",
-                    "qcNotes": normalized.get("qcNotes") or normalized.get("qc_notes") or None,
-                    "metadata": {},
-                }
-            )
+            parsed.append((row_number, SampleCreate.model_validate(_csv_row_payload(normalized))))
         except (ValidationError, ValueError, TypeError) as exc:
             errors.append(f"row {row_number}: {exc}")
             skipped += 1
-            continue
 
-        sample = Sample(workspace=workspace, **create_payload.model_dump())
+    taken = await _existing_codes(db, workspace, {item.sample_code for _, item in parsed})
+    created_samples: list[Sample] = []
+    for row_number, item in parsed:
+        if item.sample_code in taken:
+            errors.append(f"row {row_number}: sample code '{item.sample_code}' already exists")
+            skipped += 1
+            continue
+        taken.add(item.sample_code)
+        sample = Sample(
+            workspace=workspace,
+            status=SampleStatus.registered,
+            created_by=current_user.id,
+            **item.model_dump(),
+        )
         db.add(sample)
         created_samples.append(sample)
 
@@ -206,7 +251,7 @@ async def import_samples_csv(
         created=len(created_samples),
         skipped=skipped,
         errors=errors,
-        samples=created_samples,
+        samples=[SampleRead.model_validate(sample) for sample in created_samples],
     )
 
 
@@ -220,20 +265,11 @@ async def bulk_patch_samples(
     updated: list[Sample] = []
     for item in payload.items:
         sample = await _get_workspace_sample(db, workspace, item.id)
-        before = _sample_to_dict(sample)
-        _apply_update(sample, item.patch)
-        await db.flush()
-        await audit_service.record(
-            db,
-            actor=current_user,
-            action="bulk_update",
-            entity_type="sample",
-            entity_id=sample.id,
-            workspace=workspace,
-            before_state=before,
-            after_state=_sample_to_dict(sample),
+        updated.append(
+            await _update_with_audit(
+                db, workspace, sample, item.patch, action="bulk_update", actor=current_user
+            )
         )
-        updated.append(sample)
     return updated
 
 
@@ -286,20 +322,9 @@ async def update_sample(
     current_user: LabOrLead,
 ) -> Sample:
     sample = await _get_workspace_sample(db, workspace, sample_id)
-    before = _sample_to_dict(sample)
-    _apply_update(sample, payload)
-    await db.flush()
-    await audit_service.record(
-        db,
-        actor=current_user,
-        action="update",
-        entity_type="sample",
-        entity_id=sample.id,
-        workspace=workspace,
-        before_state=before,
-        after_state=_sample_to_dict(sample),
+    return await _update_with_audit(
+        db, workspace, sample, payload, action="update", actor=current_user
     )
-    return sample
 
 
 @router.delete("/{sample_id}", status_code=status.HTTP_204_NO_CONTENT)

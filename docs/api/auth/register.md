@@ -1,10 +1,15 @@
 # POST /api/v1/auth/register
 
-Bootstrap user registration for local/dev. **Disabled when `APP_ENV=production`.**
+Bootstrap user registration for local/dev. **Disabled when `APP_ENV=production`** and
+unless `BOOTSTRAP_REGISTRATION_ENABLED=true`.
+
+The new user belongs to no workspace. They either create one with
+[`POST /workspaces`](../workspaces/create.md) (and become its `bioinformatics_lead`) or are
+added to an existing one by a lead with [`POST /members`](../workspaces/members.md).
 
 | | |
 | --- | --- |
-| Auth | Workspace header |
+| Auth | None |
 | Role | — |
 | Success | `201 Created` |
 
@@ -14,7 +19,6 @@ Bootstrap user registration for local/dev. **Disabled when `APP_ENV=production`.
 
 | Header | Required |
 | --- | --- |
-| `X-LabChain-Workspace` | yes |
 | `Content-Type: application/json` | yes |
 
 ### Query
@@ -22,7 +26,6 @@ Bootstrap user registration for local/dev. **Disabled when `APP_ENV=production`.
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | `fullName` | `string` | `""` | Display name (falls back to email local-part) |
-| `role` | `Role` | `lab_technician` | Initial role |
 
 ### Body (`LoginRequest`)
 
@@ -33,14 +36,13 @@ Bootstrap user registration for local/dev. **Disabled when `APP_ENV=production`.
 
 ## Response model (`UserRead`)
 
-Same as [GET /auth/me](me.md).
+Same as [GET /auth/me](me.md), without `memberships`.
 
 ## Example
 
 ```bash
-curl -s -X POST 'http://localhost:8000/api/v1/auth/register?fullName=Alex%20Technician&role=lab_technician' \
+curl -s -X POST 'http://localhost:8000/api/v1/auth/register?fullName=Alex%20Technician' \
   -H 'Content-Type: application/json' \
-  -H 'X-LabChain-Workspace: demo' \
   -d '{
     "email": "tech@labchain.example",
     "password": "changeme123"
@@ -52,7 +54,6 @@ curl -s -X POST 'http://localhost:8000/api/v1/auth/register?fullName=Alex%20Tech
   "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
   "email": "tech@labchain.example",
   "fullName": "Alex Technician",
-  "role": "lab_technician",
   "isActive": true,
   "createdAt": "2026-08-10T12:00:00Z"
 }

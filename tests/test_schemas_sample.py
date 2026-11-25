@@ -87,6 +87,8 @@ def test_sample_read_from_attributes() -> None:
             "sample_code": "S-100",
             "modality": OmicsModality.epigenomics,
             "qc_status": QcStatus.warn,
+            "status": "fastq_received",
+            "a260_280": 1.9,
             "created_at": now,
             "updated_at": now,
             "metadata_json": {},
@@ -96,6 +98,21 @@ def test_sample_read_from_attributes() -> None:
     dumped = read.model_dump(by_alias=True)
     assert dumped["createdAt"] == now
     assert dumped["sampleCode"] == "S-100"
+    assert dumped["status"] == "fastq_received"
+    assert dumped["a260280"] == 1.9
+
+
+def test_sample_create_ignores_server_managed_status() -> None:
+    created = SampleCreate.model_validate(
+        {"sampleCode": "S-200", "modality": "genomics", "status": "completed", "assay": "exome"}
+    )
+    assert "status" not in created.model_dump()
+    assert created.assay == "exome"
+
+
+def test_sample_create_rejects_unknown_assay() -> None:
+    with pytest.raises(ValidationError):
+        SampleCreate.model_validate({"sampleCode": "S-201", "modality": "genomics", "assay": "WGS"})
 
 
 def test_bulk_patch_requires_at_least_one_item() -> None:
