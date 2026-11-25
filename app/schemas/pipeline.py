@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, computed_field
 
 from app.models.pipeline import (
     FastqVerificationStatus,
@@ -175,6 +175,18 @@ class PipelineJobRead(BaseModel):
     started_at: datetime | None = Field(default=None, alias="startedAt")
     finished_at: datetime | None = Field(default=None, alias="finishedAt")
     output_files: list[RunOutputFileRead] = Field(default_factory=list, alias="outputFiles")
+
+    @computed_field(  # type: ignore[prop-decorator]  # mypy does not support decorated properties
+        alias="executionSubmitted",
+        description=(
+            "True when the run was submitted to an executor (AWS Batch). False when pipeline "
+            "execution is disabled on this instance: the run is recorded but never executed "
+            "and stays pending"
+        ),
+    )
+    @property
+    def execution_submitted(self) -> bool:
+        return self.aws_batch_job_id is not None
 
 
 class ResultDownloadResponse(BaseModel):

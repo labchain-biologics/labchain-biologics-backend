@@ -41,7 +41,7 @@ docs = [
 ]
 
 [project.scripts]
-labchain = "uvicorn:main"
+labchain-server = "uvicorn:main"
 
 [build-system]
 requires = ["hatchling"]

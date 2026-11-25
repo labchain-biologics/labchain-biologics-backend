@@ -25,6 +25,9 @@ JSON bodies and responses use **camelCase** aliases (`sampleCode`, `rinDin`, `ac
 | `lab_technician` | Samples, FASTQ, browse pipelines / runs / results |
 | `bioinformatics_lead` | Above + pipeline run launch |
 
+The OpenAPI contract is committed as `openapi.json`. Each `operationId` is the endpoint
+function name (`list_samples`, `launch_run`, …), stable across releases for generated clients.
+
 Interactive OpenAPI UI: [`/docs`](http://localhost:8000/docs) · ReDoc: [`/redoc`](http://localhost:8000/redoc)
 
 ## Endpoint index

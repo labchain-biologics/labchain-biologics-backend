@@ -32,8 +32,9 @@ Launch an nf-core pipeline on LIMS samples.
 5. Samples move to `processing`.
 
 With `AWS_BATCH_ENABLED=false` steps 1–3 still run, but nothing is executed: the run is
-recorded with status `pending`, `awsBatchJobId: null`, and a log line saying it was not
-submitted. Samples keep their status.
+recorded with status `pending`, `awsBatchJobId: null`, `executionSubmitted: false`, and a log
+line saying it was not submitted. It stays `pending`: clients waiting for completion should
+check `executionSubmitted` instead of polling forever. Samples keep their status.
 
 Afterwards the run status follows Nextflow [weblog events](events.md) and/or AWS Batch
 (polled every `RUN_MONITOR_INTERVAL_SECONDS`). On completion, every file under the output
@@ -79,7 +80,7 @@ shell is involved).
 ## Response model (`PipelineJobRead`)
 
 See [GET /runs/{id}](get.md). Fields set at launch: `status` (`submitted` or `pending`),
-`awsBatchJobId`, `nextflowRunName`, `workDir`, `outputDir`, `samplesheetUri`.
+`awsBatchJobId`, `executionSubmitted`, `nextflowRunName`, `workDir`, `outputDir`, `samplesheetUri`.
 
 ## Example
 

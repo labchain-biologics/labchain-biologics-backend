@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -61,6 +62,14 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     logger.info("Shutdown complete — async engine disposed")
 
 
+def operation_id(route: APIRoute) -> str:
+    """
+    OpenAPI ``operationId`` = the endpoint function name (``list_samples``, ``launch_run``).
+    Stable and readable for generated clients; FastAPI's default appends path and method.
+    """
+    return route.name
+
+
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
@@ -69,6 +78,7 @@ app = FastAPI(
         "for LabChain Biologics (21 CFR Part 11 audit trail)."
     ),
     lifespan=lifespan,
+    generate_unique_id_function=operation_id,
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",

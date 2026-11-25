@@ -29,6 +29,7 @@ No body.
 | `sampleIds` | `uuid[]` | Samples in the samplesheet |
 | `parameters` | `object` | Pipeline parameters passed to Nextflow |
 | `awsBatchJobId` | `string?` | AWS Batch head job; `null` when not submitted |
+| `executionSubmitted` | `bool` | `true` when the run was submitted to AWS Batch; `false` when pipeline execution is disabled on the instance (`AWS_BATCH_ENABLED=false`): the run is never executed and stays `pending` |
 | `nextflowRunName` | `string?` | `-name` given to Nextflow |
 | `workDir` / `outputDir` | `string?` | Nextflow work and output directories (`s3://…`) |
 | `samplesheetUri` | `string?` | Generated samplesheet |
@@ -57,6 +58,7 @@ curl -s 'http://localhost:8000/api/v1/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
   "sampleIds": ["11111111-1111-1111-1111-111111111111"],
   "parameters": { "aligner": "star_salmon", "genome": "GRCh38" },
   "awsBatchJobId": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+  "executionSubmitted": true,
   "nextflowRunName": "lc-rnaseq-bbbbbbbbbbbb",
   "workDir": "s3://labchain-biologics/nextflow-work/demo/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
   "outputDir": "s3://labchain-biologics/demo/results/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
