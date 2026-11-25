@@ -12,6 +12,7 @@ from app.models.pipeline import (
 )
 from app.models.sample import OmicsModality, QcStatus, Sample
 from app.models.user import Role, User
+from app.models.workspace import Workspace, WorkspaceMembership
 
 __all__ = [
     "AuditLog",
@@ -27,4 +28,6 @@ __all__ = [
     "Sample",
     "SequencingRun",
     "User",
+    "Workspace",
+    "WorkspaceMembership",
 ]

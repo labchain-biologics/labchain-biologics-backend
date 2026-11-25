@@ -10,20 +10,24 @@ from fastapi import APIRouter, HTTPException, Query, Request, status
 from jwt import PyJWKClient
 from jwt.exceptions import PyJWKClientError, PyJWTError
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
-from app.api.deps import CurrentUser, DbSession, Workspace
+from app.api.deps import CurrentUser, DbSession
 from app.core.config import settings
 from app.core.security import (
     create_access_token,
     hash_password,
     verify_password,
 )
-from app.models.user import Role, User
+from app.models.user import User
+from app.models.workspace import WorkspaceMembership
 from app.schemas.auth import (
     GoogleLoginRequest,
     LoginRequest,
     LogoutResponse,
+    MembershipSummary,
     Token,
+    UserMe,
     UserRead,
 )
 from app.services.audit_service import audit_service
@@ -46,7 +50,7 @@ def _get_google_jwk_client() -> PyJWKClient:
 def _issue_token(user: User) -> Token:
     access_token = create_access_token(
         subject=str(user.id),
-        extra_claims={"role": user.role.value, "email": user.email},
+        extra_claims={"email": user.email},
     )
     return Token(
         access_token=access_token,
@@ -98,10 +102,10 @@ async def _verify_google_id_token(id_token: str) -> dict[str, Any]:
             detail="Invalid Google ID token",
         ) from exc
 
-    if not claims.get("email"):
+    if not claims.get("email") or claims.get("email_verified") is not True:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Google token missing email claim",
+            detail="Google token missing a verified email claim",
         )
     return claims
 
@@ -121,7 +125,6 @@ async def _get_or_create_google_user(db: DbSession, claims: dict[str, Any]) -> U
             full_name=full_name,
             google_sub=google_sub,
             hashed_password=None,
-            role=Role.lab_technician,
             is_active=True,
         )
         db.add(user)
@@ -140,11 +143,35 @@ async def _get_or_create_google_user(db: DbSession, claims: dict[str, Any]) -> U
     return user
 
 
-@router.post("/login", response_model=Token)
+_LOGIN_REQUEST_BODY: dict[str, Any] = {
+    "required": True,
+    "content": {
+        "application/json": {
+            "schema": {
+                "oneOf": [
+                    {"$ref": "#/components/schemas/LoginRequest"},
+                    GoogleLoginRequest.model_json_schema(by_alias=True),
+                ]
+            }
+        },
+        "application/x-www-form-urlencoded": {
+            "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                    "username": {"type": "string", "format": "email"},
+                    "password": {"type": "string"},
+                },
+            }
+        },
+    },
+}
+
+
+@router.post("/login", response_model=Token, openapi_extra={"requestBody": _LOGIN_REQUEST_BODY})
 async def login(
     request: Request,
     db: DbSession,
-    workspace: Workspace,
     provider: Annotated[str | None, Query()] = None,
 ) -> Token:
     """
@@ -167,7 +194,7 @@ async def login(
             action="login",
             entity_type="user",
             entity_id=user.id,
-            workspace=workspace,
+            workspace=None,
             after_state={"provider": "google", "email": user.email},
             ip_address=request.client.host if request.client else None,
         )
@@ -179,7 +206,7 @@ async def login(
         password = str(form.get("password") or "")
         if not username or not password:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="username and password are required",
             )
         user = await _authenticate_password(db, username.lower(), password)
@@ -194,16 +221,40 @@ async def login(
         action="login",
         entity_type="user",
         entity_id=user.id,
-        workspace=workspace,
+        workspace=None,
         after_state={"provider": "password", "email": user.email},
         ip_address=request.client.host if request.client else None,
     )
     return _issue_token(user)
 
 
-@router.get("/me", response_model=UserRead)
-async def read_me(current_user: CurrentUser) -> User:
-    return current_user
+@router.get("/me", response_model=UserMe)
+async def read_me(current_user: CurrentUser, db: DbSession) -> UserMe:
+    """Current user and the workspaces they belong to, with their role in each."""
+    result = await db.execute(
+        select(WorkspaceMembership)
+        .where(WorkspaceMembership.user_id == current_user.id)
+        .options(selectinload(WorkspaceMembership.workspace))
+    )
+    memberships = [
+        MembershipSummary(
+            workspace_id=membership.workspace.id,
+            slug=membership.workspace.slug,
+            name=membership.workspace.name,
+            role=membership.role,
+        )
+        for membership in result.scalars().all()
+        if membership.workspace.is_active
+    ]
+    memberships.sort(key=lambda item: item.name.lower())
+    return UserMe(
+        id=current_user.id,
+        email=current_user.email,
+        full_name=current_user.full_name,
+        is_active=current_user.is_active,
+        created_at=current_user.created_at,
+        memberships=memberships,
+    )
 
 
 @router.post("/logout", response_model=LogoutResponse)
@@ -211,7 +262,6 @@ async def logout(
     request: Request,
     db: DbSession,
     current_user: CurrentUser,
-    workspace: Workspace,
 ) -> LogoutResponse:
     await audit_service.record(
         db,
@@ -219,7 +269,7 @@ async def logout(
         action="logout",
         entity_type="user",
         entity_id=current_user.id,
-        workspace=workspace,
+        workspace=None,
         ip_address=request.client.host if request.client else None,
     )
     return LogoutResponse()
@@ -229,12 +279,12 @@ async def logout(
 async def register_bootstrap_user(
     payload: LoginRequest,
     db: DbSession,
-    workspace: Workspace,
     full_name: Annotated[str, Query(alias="fullName")] = "",
 ) -> User:
     """
     Bootstrap user registration for local/dev environments.
-    Disabled when APP_ENV=production.
+    Disabled when APP_ENV=production. The new user belongs to no workspace: they create one
+    (``POST /workspaces``) or are added to one by a workspace lead.
     """
     if settings.app_env == "production":
         raise HTTPException(
@@ -258,7 +308,6 @@ async def register_bootstrap_user(
         email=payload.email.lower(),
         full_name=full_name or payload.email.split("@")[0],
         hashed_password=hash_password(payload.password),
-        role=Role.lab_technician,
         is_active=True,
     )
     db.add(user)
@@ -269,7 +318,7 @@ async def register_bootstrap_user(
         action="register",
         entity_type="user",
         entity_id=user.id,
-        workspace=workspace,
-        after_state={"email": user.email, "role": user.role.value},
+        workspace=None,
+        after_state={"email": user.email},
     )
     return user

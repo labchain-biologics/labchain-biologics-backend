@@ -1,6 +1,16 @@
 # POST /api/v1/fastq/{fastq_id}/verify
 
-Compute / compare MD5 for a registered FastQ and update `verificationStatus`.
+Compute the MD5 of the uploaded object and compare it with `expectedMd5`.
+
+The digest comes from the object itself: the ETag for single-part uploads (which is the
+content MD5), otherwise the object is streamed and hashed. `sizeBytes` is updated to the
+stored size. Without `expectedMd5` the file is `verified` and the computed digest is
+recorded. Returns `409` if the file has not been uploaded yet, `422` if the record points
+outside the workspace storage namespace.
+
+The ETag of the verified object version is stored. A pipeline launch re-checks it and refuses
+files replaced since verification. ETags of SSE-KMS / SSE-C objects are not content MD5s:
+those objects are always streamed and hashed.
 
 | | |
 | --- | --- |

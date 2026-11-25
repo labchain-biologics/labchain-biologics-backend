@@ -1,6 +1,6 @@
 # GET /api/v1/runs/{run_id}
 
-Fetch a single pipeline job including output file metadata.
+Fetch a single pipeline run, including its registered output files.
 
 | | |
 | --- | --- |
@@ -20,7 +20,22 @@ No body.
 
 ## Response model (`PipelineJobRead`)
 
-See [POST /runs](launch.md).
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `uuid` | Run id |
+| `workspace` | `string` | Workspace slug |
+| `pipelineId` / `pipelineName` / `pipelineVersion` | `string` | nf-core pipeline and revision |
+| `status` | `JobStatus` | `pending` (not submitted), `submitted`, `running`, `succeeded`, `failed`, `cancelled` |
+| `sampleIds` | `uuid[]` | Samples in the samplesheet |
+| `parameters` | `object` | Pipeline parameters passed to Nextflow |
+| `awsBatchJobId` | `string?` | AWS Batch head job; `null` when not submitted |
+| `nextflowRunName` | `string?` | `-name` given to Nextflow |
+| `workDir` / `outputDir` | `string?` | Nextflow work and output directories (`s3://…`) |
+| `samplesheetUri` | `string?` | Generated samplesheet |
+| `progress` | `object` | From weblog events: `processesSubmitted`, `processesCompleted`, `processesFailed`, `currentProcess`, `lastEvent`, `lastEventAt`, `errorMessage` |
+| `launchedBy` | `uuid?` | User who launched the run |
+| `createdAt` / `updatedAt` / `startedAt` / `finishedAt` | `datetime?` | ISO-8601 |
+| `outputFiles` | `RunOutputFileRead[]` | Files found in `outputDir` when the run finished |
 
 ## Example
 
@@ -37,30 +52,33 @@ curl -s 'http://localhost:8000/api/v1/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
   "pipelineId": "rnaseq",
   "pipelineName": "nf-core/rnaseq",
   "pipelineVersion": "3.14.0",
-  "status": "running",
+  "status": "succeeded",
   "sequencingRunId": null,
   "sampleIds": ["11111111-1111-1111-1111-111111111111"],
-  "parameters": { "aligner": "star_salmon" },
-  "awsBatchJobId": "sim-job-123",
-  "nextflowRunName": "RNA-001-rnaseq",
-  "workDir": "s3://labchain-biologics/demo/work/...",
+  "parameters": { "aligner": "star_salmon", "genome": "GRCh38" },
+  "awsBatchJobId": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+  "nextflowRunName": "lc-rnaseq-bbbbbbbbbbbb",
+  "workDir": "s3://labchain-biologics/nextflow-work/demo/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "outputDir": "s3://labchain-biologics/demo/results/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "samplesheetUri": "s3://labchain-biologics/demo/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/samplesheet.csv",
+  "progress": { "processesCompleted": 42, "lastEvent": "completed" },
   "launchedBy": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
   "createdAt": "2026-08-10T12:00:00Z",
-  "updatedAt": "2026-08-10T12:00:00Z",
-  "startedAt": "2026-08-10T12:00:00Z",
-  "finishedAt": null,
+  "updatedAt": "2026-08-10T14:10:00Z",
+  "startedAt": "2026-08-10T12:02:00Z",
+  "finishedAt": "2026-08-10T14:10:00Z",
   "outputFiles": [
     {
       "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
       "fileType": "multiqc",
       "filename": "multiqc_report.html",
-      "s3Key": "demo/results/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/multiqc_report.html",
-      "sizeBytes": 0,
+      "s3Key": "demo/results/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/multiqc/star_salmon/multiqc_report.html",
+      "sizeBytes": 4812000,
       "md5": null,
       "sampleId": null,
-      "metadata": { "format": "html" },
-      "downloadUrl": null,
-      "createdAt": "2026-08-10T12:00:00Z"
+      "metadata": { "relativePath": "multiqc/star_salmon/multiqc_report.html" },
+      "downloadUrl": "https://…",
+      "createdAt": "2026-08-10T14:10:00Z"
     }
   ]
 }

@@ -9,7 +9,6 @@ from fastapi import HTTPException
 
 from app.api.v1.endpoints.auth import register_bootstrap_user
 from app.core.config import settings
-from app.models.user import Role
 from app.schemas.auth import LoginRequest
 
 
@@ -23,13 +22,12 @@ async def test_register_bootstrap_disabled_by_default(
         await register_bootstrap_user(
             payload=LoginRequest(email="new@labchain.example", **{"pass" + "word": "SecurePass1"}),
             db=mock_db,
-            workspace="default",
         )
     assert exc_info.value.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_register_bootstrap_forces_least_privilege_role(
+async def test_register_bootstrap_grants_no_workspace_access(
     mock_db: AsyncMock, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(settings, "bootstrap_registration_enabled", True)
@@ -41,12 +39,12 @@ async def test_register_bootstrap_forces_least_privilege_role(
     user = await register_bootstrap_user(
         payload=LoginRequest(email="new@labchain.example", **{"pass" + "word": "SecurePass1"}),
         db=mock_db,
-        workspace="default",
         full_name="New User",
     )
 
-    assert user.role == Role.lab_technician
     mock_db.add.assert_any_call(user)
+    added_types = {type(call.args[0]).__name__ for call in mock_db.add.call_args_list}
+    assert "WorkspaceMembership" not in added_types
     assert mock_db.flush.await_count >= 1
 
 
@@ -60,6 +58,5 @@ async def test_register_bootstrap_blocked_in_production_even_if_enabled(
         await register_bootstrap_user(
             payload=LoginRequest(email="new@labchain.example", **{"pass" + "word": "SecurePass1"}),
             db=mock_db,
-            workspace="default",
         )
     assert exc_info.value.status_code == 403

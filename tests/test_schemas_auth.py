@@ -8,7 +8,6 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from app.models.user import Role
 from app.schemas.auth import GoogleLoginRequest, LoginRequest, Token, UserRead
 
 
@@ -51,7 +50,6 @@ def test_user_read_from_attributes() -> None:
             "id": user_id,
             "email": "lead@example.com",
             "full_name": "Lead User",
-            "role": Role.bioinformatics_lead,
             "is_active": True,
             "created_at": now,
         }
@@ -59,4 +57,3 @@ def test_user_read_from_attributes() -> None:
     dumped = read.model_dump(by_alias=True)
     assert dumped["fullName"] == "Lead User"
     assert dumped["isActive"] is True
-    assert dumped["role"] == "bioinformatics_lead"

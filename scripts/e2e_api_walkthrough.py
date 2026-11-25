@@ -30,7 +30,6 @@ from typing import Any
 
 API_PREFIX = "/api/v1"
 DEFAULT_BASE_URL = "http://127.0.0.1:8000"
-DEFAULT_WORKSPACE = "default"
 DEFAULT_PIPELINE_ID = "rnaseq"
 
 
@@ -40,15 +39,6 @@ def _pick(data: dict[str, Any], *keys: str, default: Any = None) -> Any:
         if key in data:
             return data[key]
     return default
-
-
-def stub_fastq_md5(s3_key: str, size_bytes: int) -> str:
-    """Reproduit le MD5 déterministe du endpoint /fastq/{id}/verify."""
-    digest = hashlib.md5(usedforsecurity=False)
-    digest.update(s3_key.encode("utf-8"))
-    digest.update(b":")
-    digest.update(str(size_bytes).encode("utf-8"))
-    return digest.hexdigest()
 
 
 class ApiClient:
@@ -162,7 +152,8 @@ class ApiClient:
 def run_walkthrough(args: argparse.Namespace) -> int:
     email = args.email or f"e2e.lead.{uuid.uuid4().hex[:8]}@example.com"
     password = args.password
-    client = ApiClient(args.base_url, args.workspace)
+    workspace = args.workspace or f"e2e-{uuid.uuid4().hex[:8]}"
+    client = ApiClient(args.base_url, workspace)
 
     # 0. Santé
     client.request(
@@ -173,18 +164,15 @@ def run_walkthrough(args: argparse.Namespace) -> int:
         step="0. Health",
     )
 
-    # 1. Créer un user (lead — requis pour lancer une pipeline)
+    # 1. Créer un user (il deviendra lead du workspace qu'il crée à l'étape 3b)
     register = client.request(
         "POST",
         f"{API_PREFIX}/auth/register",
         expected_status={201, 409},
         auth=False,
-        params={
-            "fullName": args.full_name,
-            "role": "bioinformatics_lead",
-        },
+        params={"fullName": args.full_name},
         json_body={"email": email, "password": password},
-        step="1. Register (bioinformatics_lead)",
+        step="1. Register",
     )
     if isinstance(register, dict) and register.get("detail") == "Email already registered":
         print("  (compte déjà existant — on continue avec le login)")
@@ -210,6 +198,17 @@ def run_walkthrough(args: argparse.Namespace) -> int:
         expected_status=200,
         step="3. GET /auth/me",
     )
+
+    # 3b. Créer le workspace : le créateur en devient bioinformatics_lead
+    created_ws = client.request(
+        "POST",
+        f"{API_PREFIX}/workspaces",
+        expected_status={201, 409},
+        json_body={"slug": workspace, "name": f"E2E {workspace}"},
+        step="3b. Create workspace",
+    )
+    if isinstance(created_ws, dict) and "slug" not in created_ws:
+        print("  (workspace déjà existant — l'utilisateur doit en être membre)")
 
     # 4. Créer un sample
     sample_code = f"SMP-E2E-{uuid.uuid4().hex[:8].upper()}"
@@ -265,6 +264,8 @@ def run_walkthrough(args: argparse.Namespace) -> int:
     # 7. Enregistrer un FastQ + upload S3 (LocalStack) + verify
     size_bytes = 1024
     filename = f"{sample_code}_R1.fastq.gz"
+    upload_body = b"\x1f\x8b" + b"\x00" * (size_bytes - 2)
+    expected_md5 = hashlib.md5(upload_body, usedforsecurity=False).hexdigest()
     register_fq = client.request(
         "POST",
         f"{API_PREFIX}/fastq/register",
@@ -274,16 +275,14 @@ def run_walkthrough(args: argparse.Namespace) -> int:
             "sizeBytes": size_bytes,
             "sampleId": sample_id,
             "readPair": "R1",
+            "expectedMd5": expected_md5,
         },
         step="7a. Register FastQ",
     )
     fastq_id = str(_pick(register_fq, "id"))
-    s3_key = str(_pick(register_fq, "s3Key", "s3_key"))
     upload_url = str(_pick(register_fq, "uploadUrl", "upload_url"))
-    expected_md5 = stub_fastq_md5(s3_key, size_bytes)
 
     print(f"\n→ [7b. Upload FastQ to S3] PUT {upload_url[:80]}…")
-    upload_body = b"\x1f\x8b" + b"\x00" * (size_bytes - 2)
     upload_req = urllib.request.Request(
         upload_url,
         data=upload_body,
@@ -294,9 +293,9 @@ def run_walkthrough(args: argparse.Namespace) -> int:
         with urllib.request.urlopen(upload_req, timeout=30.0) as upload_resp:
             print(f"  ✓ HTTP {upload_resp.getcode()}")
     except urllib.error.HTTPError as exc:
-        print(f"  ⚠ Upload S3 HTTP {exc.code} (LocalStack peut être down — on continue quand même)")
+        raise RuntimeError(f"7b. Upload S3: HTTP {exc.code} (LocalStack démarré ?)") from exc
     except urllib.error.URLError as exc:
-        print(f"  ⚠ Upload S3 impossible ({exc}) — on continue quand même")
+        raise RuntimeError(f"7b. Upload S3 impossible: {exc} (LocalStack démarré ?)") from exc
 
     verify = client.request(
         "POST",
@@ -305,7 +304,9 @@ def run_walkthrough(args: argparse.Namespace) -> int:
         step="7c. Verify FastQ",
     )
     status = _pick(verify, "verificationStatus", "verification_status")
-    print(f"  verificationStatus={status} (stub md5={expected_md5})")
+    if status != "verified":
+        raise RuntimeError(f"7c. Verify FastQ: attendu 'verified', reçu '{status}'")
+    print(f"  verificationStatus={status} (md5={expected_md5})")
 
     # 8. Catalogue pipelines
     pipelines = client.request(
@@ -337,7 +338,6 @@ def run_walkthrough(args: argparse.Namespace) -> int:
             "pipelineId": pipeline_id,
             "pipelineVersion": "latest",
             "sampleIds": [sample_id],
-            "runName": f"e2e-{sample_code.lower()}",
             "parameters": {},
         },
         step="9. Launch pipeline run",
@@ -428,8 +428,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--workspace",
-        default=DEFAULT_WORKSPACE,
-        help=f"Valeur de X-LabChain-Workspace (défaut: {DEFAULT_WORKSPACE})",
+        default=None,
+        help="Slug du workspace (X-LabChain-Workspace). Défaut : nouveau workspace aléatoire",
     )
     parser.add_argument(
         "--email",

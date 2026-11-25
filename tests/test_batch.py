@@ -1,68 +1,115 @@
-"""Unit tests for AWS Batch / Nextflow submission hooks."""
+"""Unit tests for Nextflow command construction and AWS Batch submission."""
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
-from app.services.batch import BatchService
+import pytest
+
+from app.services import batch
+from app.services.batch import (
+    BatchService,
+    InvalidParameterError,
+    NextflowLaunch,
+    build_nextflow_command,
+    validate_parameters,
+)
 
 
-def test_submit_nextflow_job_simulates_when_batch_disabled() -> None:
-    service = BatchService()
+def _launch(**overrides: Any) -> NextflowLaunch:
+    values: dict[str, Any] = {
+        "pipeline_id": "rnaseq",
+        "pipeline_version": "3.14.0",
+        "run_name": "lc-rnaseq-abc123",
+        "work_dir": "s3://bucket/work/lab-a/1",
+        "input_uri": "s3://bucket/lab-a/runs/1/samplesheet.csv",
+        "outdir_uri": "s3://bucket/lab-a/results/1",
+        "parameters": {"aligner": "star_salmon", "skip_qc": True, "min_reads": 10, "x": None},
+        "weblog_url": None,
+    }
+    values.update(overrides)
+    return NextflowLaunch(**values)
+
+
+def test_command_has_pipeline_revision_io_and_typed_params() -> None:
+    command = build_nextflow_command(_launch())
+    assert command[:5] == ["nextflow", "run", "nf-core/rnaseq", "-r", "3.14.0"]
+    joined = " ".join(command)
+    assert "-name lc-rnaseq-abc123" in joined
+    assert "-work-dir s3://bucket/work/lab-a/1" in joined
+    assert "--input s3://bucket/lab-a/runs/1/samplesheet.csv" in joined
+    assert "--outdir s3://bucket/lab-a/results/1" in joined
+    assert "--aligner star_salmon" in joined
+    assert "--skip_qc true" in joined
+    assert "--min_reads 10" in joined
+    assert "--x" not in command  # None values are omitted
+    assert "-with-weblog" not in command
+
+
+def test_command_includes_weblog_and_custom_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(batch.settings, "nextflow_config_uri", "s3://bucket/conf/awsbatch.config")
+    monkeypatch.setattr(batch.settings, "nextflow_profile", "awsbatch")
+    command = build_nextflow_command(_launch(weblog_url="https://api/x?token=t"))
+    assert command[command.index("-c") + 1] == "s3://bucket/conf/awsbatch.config"
+    assert command[command.index("-profile") + 1] == "awsbatch"
+    assert command[command.index("-with-weblog") + 1] == "https://api/x?token=t"
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        {"outdir": "s3://elsewhere"},
+        {"input": "s3://other.csv"},
+        {"--flag": "x"},
+        {"name with space": "x"},
+        {"tools": ["a", "b"]},
+        {"cfg": {"a": 1}},
+    ],
+)
+def test_invalid_parameters_are_rejected(parameters: dict[str, Any]) -> None:
+    with pytest.raises(InvalidParameterError):
+        validate_parameters(parameters)
+
+
+def test_parameter_values_are_single_arguments() -> None:
+    """Values are passed as one argv element each: no shell, no word splitting."""
+    command = build_nextflow_command(_launch(parameters={"genome": "GRCh38; rm -rf /"}))
+    assert command[command.index("--genome") + 1] == "GRCh38; rm -rf /"
+
+
+def test_invalid_run_name_rejected() -> None:
+    with pytest.raises(InvalidParameterError):
+        build_nextflow_command(_launch(run_name="Bad Name"))
+
+
+def test_submit_does_nothing_when_batch_disabled() -> None:
     with patch("app.services.batch.get_batch_client", return_value=None):
-        result = service.submit_nextflow_job(
-            pipeline_id="rnaseq",
-            pipeline_version="3.14.0",
-            parameters={"aligner": "star_salmon"},
-            workspace="lab-a",
-            run_name="vc-rnaseq-demo",
-        )
-
-    assert result.simulated is True
-    assert result.job_id.startswith("sim-")
-    assert result.job_name == "vc-rnaseq-demo"
-    assert result.nextflow_run_name == "vc-rnaseq-demo"
-    assert result.work_dir.endswith("/lab-a/vc-rnaseq-demo")
+        result = BatchService().submit(_launch(), workspace="lab-a")
+    assert result.submitted is False
+    assert result.job_id is None
 
 
-def test_submit_nextflow_job_calls_aws_batch_when_enabled() -> None:
+def test_submit_sends_full_command_to_aws_batch() -> None:
     client = MagicMock()
     client.submit_job.return_value = {"jobId": "batch-job-123"}
-    service = BatchService()
-
     with patch("app.services.batch.get_batch_client", return_value=client):
-        result = service.submit_nextflow_job(
-            pipeline_id="sarek",
-            pipeline_version="3.4.0",
-            parameters={"genome": "GATK.GRCh38"},
-            workspace="default",
-            run_name="vc-sarek-1",
-        )
+        result = BatchService().submit(_launch(), workspace="lab-a")
 
-    assert result.simulated is False
+    assert result.submitted is True
     assert result.job_id == "batch-job-123"
-    client.submit_job.assert_called_once()
-    call_kwargs = client.submit_job.call_args.kwargs
-    assert call_kwargs["jobName"] == "vc-sarek-1"
-    assert "nf-core/sarek" in call_kwargs["containerOverrides"]["command"]
-
-
-def test_describe_job_simulated() -> None:
-    service = BatchService()
-    with patch("app.services.batch.get_batch_client", return_value=None):
-        info = service.describe_job("sim-abc123")
-    assert info["status"] == "RUNNING"
-    assert info["simulated"] is True
+    kwargs = client.submit_job.call_args.kwargs
+    assert kwargs["jobName"] == "lc-rnaseq-abc123"
+    assert kwargs["containerOverrides"]["command"] == build_nextflow_command(_launch())
+    assert kwargs["tags"]["workspace"] == "lab-a"
 
 
 def test_describe_job_not_found() -> None:
     client = MagicMock()
     client.describe_jobs.return_value = {"jobs": []}
-    service = BatchService()
     with patch("app.services.batch.get_batch_client", return_value=client):
-        info = service.describe_job("real-job")
+        info = BatchService().describe_job("real-job")
     assert info["status"] == "NOT_FOUND"
-    assert info["simulated"] is False
 
 
 def test_describe_job_returns_status() -> None:
@@ -70,8 +117,7 @@ def test_describe_job_returns_status() -> None:
     client.describe_jobs.return_value = {
         "jobs": [{"jobId": "real-job", "status": "SUCCEEDED", "statusReason": "done"}]
     }
-    service = BatchService()
     with patch("app.services.batch.get_batch_client", return_value=client):
-        info = service.describe_job("real-job")
+        info = BatchService().describe_job("real-job")
     assert info["status"] == "SUCCEEDED"
     assert info["statusReason"] == "done"

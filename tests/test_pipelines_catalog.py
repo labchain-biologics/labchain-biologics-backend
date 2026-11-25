@@ -16,7 +16,8 @@ def test_get_pipeline_returns_item() -> None:
     pipeline = get_pipeline("sarek")
     assert pipeline is not None
     assert pipeline.name == "nf-core/sarek"
-    assert pipeline.version == "3.4.0"
+    assert pipeline.version == "3.4.4"
+    assert pipeline.version in pipeline.versions
     assert "variant-calling" in pipeline.categories
 
 
@@ -31,3 +32,13 @@ def test_pipeline_catalog_serializes_camel_case() -> None:
     assert dumped["nfCore"] is True
     assert "defaultParams" in dumped
     assert dumped["defaultParams"]["aligner"] == "star_salmon"
+
+
+def test_every_pipeline_default_version_is_launchable() -> None:
+    for item in list_pipelines():
+        assert item.version in item.versions, item.id
+
+
+def test_catalog_covers_web_client_pipelines() -> None:
+    ids = {item.id for item in list_pipelines()}
+    assert {"sarek", "rnaseq", "scrnaseq", "ampliseq", "atacseq", "mag", "methylseq"} <= ids

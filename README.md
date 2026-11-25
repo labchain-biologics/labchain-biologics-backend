@@ -20,11 +20,15 @@ Python **3.11+** required. Package manager: [uv](https://docs.astral.sh/uv/).
 
 - Sample LIMS (modality, RIN/DIN, concentration, QC status)
 - FASTQ upload via S3 presigned URLs
-- nf-core pipeline catalog and run orchestration (lead-only launch)
-- Run status + SSE log streaming
+- nf-core pipeline catalog and run orchestration (lead-only launch): samplesheet generated
+  from verified FASTQ files, Nextflow head job submitted to AWS Batch
+- Run status from Nextflow weblog events and AWS Batch polling; output files registered
+  from the run's S3 output directory
+- Run log as JSON and SSE stream
+- FASTQ integrity: MD5 computed from the stored object
 - Result downloads (VCF, BAM, MultiQC, etc.)
 - RBAC: `lab_technician` vs `bioinformatics_lead`
-- Multi-tenant workspace via `X-LabChain-Workspace`
+- Multi-tenant workspaces with per-workspace roles (`X-LabChain-Workspace` = workspace slug)
 - Append-only audit trail on mutations
 
 ## Prerequisites
@@ -75,6 +79,18 @@ docker compose --env-file .env stop
 uv run poe migrate
 ```
 
+Upgrading an existing database past migration 0003 creates workspaces from existing data
+but **no memberships** (historical activity does not prove who should have access). Grant
+access explicitly:
+
+```bash
+uv run python scripts/grant_membership.py --email lead@lab.org \
+  --workspace <slug> --role bioinformatics_lead
+```
+
+Migration 0005 resets every FASTQ verification to `pending` (the previous check did not read
+the stored bytes): verify the files again before launching runs.
+
 ### 5. Run the API
 
 ```bash
@@ -96,12 +112,13 @@ All authenticated routes expect:
 
 ```http
 Authorization: Bearer <access_token>
-X-LabChain-Workspace: <workspace-id>
+X-LabChain-Workspace: <workspace-slug>
 ```
 
 | Area | Prefix | Notes |
 | --- | --- | --- |
-| Auth | `/api/v1/auth` | login, register, me, logout |
+| Auth | `/api/v1/auth` | login, register, me (with memberships), logout |
+| Workspaces | `/api/v1/workspaces`, `/api/v1/members` | create/list workspaces, manage members |
 | Samples | `/api/v1/samples` | CRUD, CSV import, bulk update/delete |
 | FASTQ | `/api/v1/fastq` | presign + verify |
 | Pipelines | `/api/v1/pipelines` | nf-core catalog |
@@ -151,19 +168,29 @@ See [`.env.example`](.env.example). Important variables:
 | --- | --- |
 | `SECRET_KEY` | JWT HS256 secret (≥ 32 chars, required, must not be placeholder) |
 | `BOOTSTRAP_REGISTRATION_ENABLED` | Enables `/auth/register` bootstrap flow outside production (default `false`) |
+| `WORKSPACE_CREATION_ENABLED` | Lets any authenticated user create a workspace (default `true`) |
 | `DATABASE_URL` | Async Postgres URL (`postgresql+asyncpg://…`) |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
 | `S3_ENDPOINT_URL` | LocalStack (`http://localhost:4566`) or empty for real AWS |
-| `AWS_BATCH_ENABLED` | `false` locally; enable in deployed environments |
+| `AWS_BATCH_ENABLED` | Submit runs to AWS Batch; `false` records runs without executing them |
+| `PUBLIC_API_URL` | URL Nextflow can reach for weblog callbacks (optional) |
 | `GOOGLE_CLIENT_ID` | Audience for Google ID token login (optional) |
 
 ## Roles
 
+Roles are granted per workspace (`workspace_memberships`).
+
 | Role | Typical permissions |
 | --- | --- |
 | `lab_technician` | Samples, FASTQ, browse pipelines/results |
-| `bioinformatics_lead` | Above + pipeline run launch |
+| `bioinformatics_lead` | Above + pipeline run launch + workspace member management |
 
 ## License
 
-Proprietary — LabChain Biologics. All rights reserved.
+Copyright (C) 2026 LabChain Biologics.
+
+This program is free software: you can redistribute it and/or modify it under the terms of
+the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).
+
+In short: you may use, modify and self-host it. If you run a modified version as a network
+service, you must offer its users the corresponding source code under the same license.

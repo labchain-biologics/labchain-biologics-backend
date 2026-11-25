@@ -26,7 +26,8 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     entity_type: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     entity_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
-    workspace: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    # NULL for user-level events (login, logout, registration) not tied to a workspace.
+    workspace: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     before_state: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     after_state: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)

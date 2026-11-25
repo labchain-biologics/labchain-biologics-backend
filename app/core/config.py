@@ -26,6 +26,7 @@ class Settings(BaseSettings):
         description="JWT signing secret (HS256)",
     )
     bootstrap_registration_enabled: bool = False
+    workspace_creation_enabled: bool = True
     access_token_expire_minutes: int = 60
     api_v1_prefix: str = "/api/v1"
 
@@ -48,6 +49,14 @@ class Settings(BaseSettings):
     aws_batch_job_definition: str = "labchain-nf-job"
     aws_batch_enabled: bool = False
     nextflow_work_dir: str = "s3://labchain-biologics/nextflow-work"
+    # Passed to `nextflow run -profile`. With AWS Batch this is usually a profile defined in
+    # the config at `nextflow_config_uri` (e.g. "awsbatch").
+    nextflow_profile: str = "docker"
+    nextflow_config_uri: str | None = None
+    # Base URL Nextflow can reach to post weblog events back to this API, e.g.
+    # "https://api.example.org". Unset: run status comes from AWS Batch polling only.
+    public_api_url: str | None = None
+    run_monitor_interval_seconds: int = Field(default=30, ge=5)
 
     @field_validator("cors_origins", mode="before")
     @classmethod
