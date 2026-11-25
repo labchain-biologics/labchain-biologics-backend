@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, status
@@ -14,9 +15,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_access_token
+from app.models.api_token import ApiToken
 from app.models.user import Role, User
 from app.models.workspace import Workspace as WorkspaceModel
 from app.models.workspace import WorkspaceMembership
+from app.services import api_tokens
 
 WORKSPACE_HEADER = "X-LabChain-Workspace"
 
@@ -42,29 +45,66 @@ def parse_workspace_header(value: str | None) -> str:
     return slug
 
 
-async def get_current_user(
+@dataclass(frozen=True)
+class AuthContext:
+    """The authenticated user, and the personal access token used, if any."""
+
+    user: User
+    api_token: ApiToken | None = None
+
+
+async def get_auth_context(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> User:
+) -> AuthContext:
+    """Accept a login JWT or a personal access token (``lcb_pat_…``) as bearer credential."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = decode_access_token(token)
-        subject = payload.get("sub")
-        if subject is None:
+    api_token: ApiToken | None = None
+    if api_tokens.is_api_token(token):
+        api_token = await api_tokens.authenticate(db, token)
+        if api_token is None:
             raise credentials_exception
-        user_id = uuid.UUID(str(subject))
-    except (InvalidTokenError, ValueError, TypeError) as exc:
-        raise credentials_exception from exc
+        user_id = api_token.user_id
+    else:
+        try:
+            payload = decode_access_token(token)
+            subject = payload.get("sub")
+            if subject is None:
+                raise credentials_exception
+            user_id = uuid.UUID(str(subject))
+        except (InvalidTokenError, ValueError, TypeError) as exc:
+            raise credentials_exception from exc
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if user is None or not user.is_active:
         raise credentials_exception
-    return user
+    return AuthContext(user=user, api_token=api_token)
+
+
+async def get_current_user(
+    context: Annotated[AuthContext, Depends(get_auth_context)],
+) -> User:
+    return context.user
+
+
+async def require_interactive_session(
+    context: Annotated[AuthContext, Depends(get_auth_context)],
+) -> User:
+    """
+    Refuse personal access tokens: a leaked token must not be able to mint new tokens and
+    outlive its own revocation. The user signs in (login JWT) to create one.
+    """
+    if context.api_token is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This action requires signing in; personal access tokens cannot perform it",
+        )
+    return context.user
 
 
 async def get_membership(
@@ -133,6 +173,7 @@ require_bioinformatics_lead = RequireRole(Role.bioinformatics_lead)
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
+InteractiveUser = Annotated[User, Depends(require_interactive_session)]
 Membership = Annotated[WorkspaceMembership, Depends(get_membership)]
 Workspace = Annotated[str, Depends(get_workspace)]
 LabOrLead = Annotated[User, Depends(require_lab_or_lead)]

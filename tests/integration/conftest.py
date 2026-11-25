@@ -43,7 +43,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 TRUNCATE_SQL = (
     "TRUNCATE run_output_files, pipeline_jobs, fastq_files, sequencing_runs, samples, "
-    "workspace_memberships, workspaces, audit_logs, users RESTART IDENTITY CASCADE"
+    "api_tokens, workspace_memberships, workspaces, audit_logs, users RESTART IDENTITY CASCADE"
 )
 
 

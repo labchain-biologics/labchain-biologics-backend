@@ -12,6 +12,10 @@ Authorization: Bearer <access_token>
 X-LabChain-Workspace: <workspace-slug>
 ```
 
+The bearer credential is either a login JWT (`POST /auth/login`, short-lived) or a
+[personal access token](api/auth/tokens.md) (`lcb_pat_…`, for scripts, CI and the SDK). Both act
+with the same per-workspace roles.
+
 Workspaces are tenants. The header must name a workspace the user is a **member** of;
 otherwise the API answers `404 Workspace '<slug>' not found`, exactly as for a workspace that
 does not exist. Roles are held **per workspace**: the same user can be `bioinformatics_lead`
@@ -35,7 +39,7 @@ Interactive OpenAPI UI: [`/docs`](http://localhost:8000/docs) · ReDoc: [`/redoc
 | Area | Endpoints |
 | --- | --- |
 | [Health](api/health.md) | `GET /health` |
-| [Auth](api/auth/login.md) | login, me, logout, register |
+| [Auth](api/auth/login.md) | login, me, logout, register, [personal access tokens](api/auth/tokens.md) |
 | [Workspaces](api/workspaces/create.md) | list mine, create, members (list, add, change role, remove) |
 | [Samples](api/samples/list.md) | list, create, import, bulk, get, update, delete |
 | [Sequencing runs](api/sequencing-runs/index.md) | list, create, get |

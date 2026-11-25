@@ -67,6 +67,7 @@ nav:
           - GET /auth/me: api/auth/me.md
           - POST /auth/logout: api/auth/logout.md
           - POST /auth/register: api/auth/register.md
+          - /auth/tokens: api/auth/tokens.md
       - Workspaces:
           - GET/POST /workspaces: api/workspaces/create.md
           - /members: api/workspaces/members.md
