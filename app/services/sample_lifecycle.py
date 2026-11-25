@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterable
+from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -32,7 +34,9 @@ async def get_workspace_samples(
     if not wanted:
         return []
     result = await db.execute(
-        select(Sample).where(Sample.workspace == workspace, Sample.id.in_(wanted))
+        select(Sample).where(
+            Sample.workspace == workspace, Sample.id.in_(wanted), Sample.is_active()
+        )
     )
     found = {sample.id: sample for sample in result.scalars().all()}
     missing = [str(sample_id) for sample_id in wanted if sample_id not in found]
@@ -94,3 +98,29 @@ async def set_status(
             after_state={"status": new_status.value},
             reason=reason,
         )
+
+
+async def soft_delete(
+    db: AsyncSession,
+    sample: Sample,
+    *,
+    actor: User,
+    action: str,
+    before_state: dict[str, Any],
+) -> None:
+    """
+    Delete a sample without removing its row (21 CFR Part 11): it disappears from the API,
+    while its FASTQ files, run outputs and audit trail keep pointing to it.
+    """
+    sample.deleted_at = datetime.now(UTC)
+    await db.flush()
+    await audit_service.record(
+        db,
+        actor=actor,
+        action=action,
+        entity_type="sample",
+        entity_id=sample.id,
+        workspace=sample.workspace,
+        before_state=before_state,
+        after_state={"deletedAt": sample.deleted_at.isoformat()},
+    )

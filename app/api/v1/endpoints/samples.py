@@ -23,6 +23,7 @@ from app.schemas.sample import (
     SampleUpdate,
 )
 from app.services.audit_service import audit_service
+from app.services.sample_lifecycle import soft_delete
 
 router = APIRouter(prefix="/samples", tags=["samples"])
 
@@ -40,7 +41,9 @@ def _apply_update(sample: Sample, patch: SampleUpdate) -> None:
 
 async def _get_workspace_sample(db: DbSession, workspace: str, sample_id: uuid.UUID) -> Sample:
     result = await db.execute(
-        select(Sample).where(Sample.id == sample_id, Sample.workspace == workspace)
+        select(Sample).where(
+            Sample.id == sample_id, Sample.workspace == workspace, Sample.is_active()
+        )
     )
     sample = result.scalar_one_or_none()
     if sample is None:
@@ -52,6 +55,7 @@ async def _get_workspace_sample(db: DbSession, workspace: str, sample_id: uuid.U
 
 
 async def _existing_codes(db: DbSession, workspace: str, codes: set[str]) -> set[str]:
+    """Codes already used in the workspace, including by deleted samples (never reused)."""
     if not codes:
         return set()
     result = await db.execute(
@@ -65,13 +69,21 @@ async def _existing_codes(db: DbSession, workspace: str, codes: set[str]) -> set
 async def _ensure_code_available(
     db: DbSession, workspace: str, code: str, *, exclude_id: uuid.UUID | None = None
 ) -> None:
-    stmt = select(Sample.id).where(Sample.workspace == workspace, Sample.sample_code == code)
+    stmt = select(Sample.deleted_at).where(
+        Sample.workspace == workspace, Sample.sample_code == code
+    )
     if exclude_id is not None:
         stmt = stmt.where(Sample.id != exclude_id)
-    if (await db.execute(stmt)).first() is not None:
+    existing = (await db.execute(stmt)).first()
+    if existing is not None:
+        reason = (
+            "was used by a deleted sample; sample codes are not reused"
+            if existing.deleted_at is not None
+            else "already exists"
+        )
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Sample code '{code}' already exists in workspace '{workspace}'",
+            detail=f"Sample code '{code}' {reason} in workspace '{workspace}'",
         )
 
 
@@ -128,7 +140,7 @@ async def list_samples(
     limit: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
 ) -> list[Sample]:
-    stmt = select(Sample).where(Sample.workspace == workspace)
+    stmt = select(Sample).where(Sample.workspace == workspace, Sample.is_active())
     if modality is not None:
         stmt = stmt.where(Sample.modality == modality)
     if assay is not None:
@@ -283,21 +295,19 @@ async def bulk_delete_samples(
     deleted = 0
     for sample_id in payload.ids:
         result = await db.execute(
-            select(Sample).where(Sample.id == sample_id, Sample.workspace == workspace)
+            select(Sample).where(
+                Sample.id == sample_id, Sample.workspace == workspace, Sample.is_active()
+            )
         )
         sample = result.scalar_one_or_none()
         if sample is None:
             continue
-        before = _sample_to_dict(sample)
-        await db.delete(sample)
-        await audit_service.record(
+        await soft_delete(
             db,
+            sample,
             actor=current_user,
             action="bulk_delete",
-            entity_type="sample",
-            entity_id=sample_id,
-            workspace=workspace,
-            before_state=before,
+            before_state=_sample_to_dict(sample),
         )
         deleted += 1
     return {"deleted": deleted}
@@ -335,14 +345,6 @@ async def delete_sample(
     current_user: LabOrLead,
 ) -> None:
     sample = await _get_workspace_sample(db, workspace, sample_id)
-    before = _sample_to_dict(sample)
-    await db.delete(sample)
-    await audit_service.record(
-        db,
-        actor=current_user,
-        action="delete",
-        entity_type="sample",
-        entity_id=sample_id,
-        workspace=workspace,
-        before_state=before,
+    await soft_delete(
+        db, sample, actor=current_user, action="delete", before_state=_sample_to_dict(sample)
     )

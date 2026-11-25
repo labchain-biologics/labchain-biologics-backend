@@ -7,7 +7,17 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    ColumnElement,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -131,3 +141,11 @@ class Sample(Base):
         onupdate=utc_now,
         nullable=False,
     )
+    # Soft delete (21 CFR Part 11): a deleted sample is hidden from the API but its row, its
+    # links to FASTQ files and results, and its audit trail are kept. Its code is not reused.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    @classmethod
+    def is_active(cls) -> ColumnElement[bool]:
+        """SQL filter for samples that are not deleted."""
+        return cls.deleted_at.is_(None)

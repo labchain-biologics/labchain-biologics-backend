@@ -143,7 +143,9 @@ async def _job_samples(db: AsyncSession, job: PipelineJob) -> list[Sample]:
     if not ids:
         return []
     result = await db.execute(
-        select(Sample).where(Sample.workspace == job.workspace, Sample.id.in_(ids))
+        select(Sample).where(
+            Sample.workspace == job.workspace, Sample.id.in_(ids), Sample.is_active()
+        )
     )
     return list(result.scalars().all())
 

@@ -1,6 +1,14 @@
 # DELETE /api/v1/samples/{sample_id}
 
-Delete a sample. Audited; no response body.
+Delete a sample (soft delete). Audited (`delete`, with the full sample before deletion and
+`deletedAt` after); no response body.
+
+!!! note "Soft delete"
+    Samples are regulated records (21 CFR Part 11): deleting one does not remove it. The sample
+    disappears from every endpoint (`404`, absent from listings, unusable for FASTQ or runs),
+    but its row, its links to FASTQ files and run outputs, and its audit trail are kept.
+    Its sample code stays reserved: creating or importing a sample with the same code answers
+    `409` (create) or is skipped (import).
 
 | | |
 | --- | --- |
@@ -21,6 +29,12 @@ No body.
 ## Response model
 
 Empty body (`204`).
+
+## Errors
+
+| Status | When |
+| --- | --- |
+| `404` | Unknown sample, already deleted, or in another workspace |
 
 ## Example
 
