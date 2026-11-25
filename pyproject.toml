@@ -43,6 +43,10 @@ docs = [
 [project.scripts]
 labchain-server = "uvicorn:main"
 
+[tool.uv.workspace]
+# The Python SDK (Apache-2.0) is developed here so API and client change together.
+members = ["sdk"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -86,3 +90,5 @@ start-dev = { cmd = "uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 
 openapi = { cmd = "uv run python scripts/export_openapi.py", help = "Export the OpenAPI contract to openapi.json" }
 docs-serve = { cmd = "mkdocs serve", help = "Serve MkDocs locally (requires: uv sync --extra docs)" }
 docs-build = { cmd = "mkdocs build --strict", help = "Build MkDocs site (requires: uv sync --extra docs)" }
+sdk-test = { cmd = "uv run --package labchain-biologics-sdk pytest sdk", help = "Run the Python SDK tests" }
+sdk-typecheck = { cmd = "uv run --package labchain-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests", help = "Type-check the Python SDK" }

@@ -43,6 +43,7 @@ jobs:
             python:
               - 'app/**'
               - 'tests/**'
+              - 'sdk/**'
               - 'alembic/**'
               - 'pyproject.toml'
               - 'uv.lock'
@@ -108,12 +109,15 @@ jobs:
           python-version: "3.11"
 
       - name: Sync dependencies
-        run: uv sync --extra dev
+        run: uv sync --all-packages --extra dev
 
       - name: Run unit and integration tests
         env:
           TEST_DATABASE_URL: postgresql+asyncpg://labchain:labchain@localhost:5433/labchain_test
         run: uv run poe test
+
+      - name: Run Python SDK tests
+        run: uv run poe sdk-test
 
   pre-commit:
     name: Pre-commit (lint / format / mypy)
@@ -131,7 +135,7 @@ jobs:
           python-version: "3.11"
 
       - name: Sync dependencies
-        run: uv sync --extra dev
+        run: uv sync --all-packages --extra dev
 
       - name: Cache pre-commit environments
         uses: actions/cache@v4
