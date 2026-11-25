@@ -5,6 +5,9 @@ See [`.env.example`](https://github.com/labchain-biologics/labchain-biologics-ba
 | Variable | Purpose |
 | --- | --- |
 | `SECRET_KEY` | JWT HS256 secret (≥ 32 chars) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Lifetime of login JWTs (default 60) |
+| `API_TOKEN_DEFAULT_LIFETIME_DAYS` | Lifetime of a personal access token when the request names none (default 90) |
+| `API_TOKEN_MAX_LIFETIME_DAYS` | Longest lifetime a personal access token may request (default 365) |
 | `DATABASE_URL` | Async Postgres URL (`postgresql+asyncpg://…`) |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
 | `S3_ENDPOINT_URL` | LocalStack (`http://localhost:4566`) or empty for real AWS |

@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     bootstrap_registration_enabled: bool = False
     workspace_creation_enabled: bool = True
     access_token_expire_minutes: int = 60
+    # Personal access tokens (scripts, CI, SDK): lifetime when the request names none, and the
+    # longest lifetime a user may request. Every token expires.
+    api_token_default_lifetime_days: int = Field(default=90, ge=1)
+    api_token_max_lifetime_days: int = Field(default=365, ge=1)
     api_v1_prefix: str = "/api/v1"
 
     cors_origins: Annotated[list[str], NoDecode] = Field(
