@@ -15,6 +15,9 @@ uv run poe test                # pytest
 uv run poe check               # pre-commit: ruff, ruff-format, mypy --strict, markdownlint
 uv run poe e2e                 # end-to-end walkthrough against a running API
 uv run poe docs-serve          # MkDocs (needs --extra docs)
+uv sync --all-packages --extra dev   # also installs the Python SDK (sdk/)
+uv run poe sdk-test            # SDK tests (no network)
+uv run poe sdk-typecheck       # mypy --strict on the SDK
 ```
 
 `SECRET_KEY` (≥ 32 chars, not a placeholder) must be set, including for tests (see `tests/conftest.py`).
@@ -23,7 +26,19 @@ uv run poe docs-serve          # MkDocs (needs --extra docs)
 
 `app/api` (thin routers + `deps.py`) · `app/core` (settings, DB, security) · `app/models`
 (SQLAlchemy 2.0) · `app/schemas` (Pydantic v2) · `app/services` (S3, Batch, audit, catalog) ·
-`alembic/versions` · `docs/` (MkDocs, one page per endpoint under `docs/api/`).
+`alembic/versions` · `docs/` (MkDocs, one page per endpoint under `docs/api/`) ·
+`sdk/` (Python SDK `labchain-biologics-sdk`, uv workspace member).
+
+### Python SDK (`sdk/`)
+
+- Licensed **Apache-2.0** (`sdk/LICENSE`), unlike the AGPL server. Never import `app.*` from
+  the SDK: it mirrors the public contract (`openapi.json`) with its own models.
+- Dependencies: `httpx` and `pydantic` only. Synchronous client; mypy --strict.
+- An API change that affects a route, field or enum used by the SDK updates `sdk/` in the
+  same PR.
+- Never log or `repr()` tokens or signed storage URLs; signed URLs never receive the API
+  `Authorization` header.
+- Unit tests use `httpx.MockTransport` (`sdk/tests/fakes.py`), no network.
 
 ## Rules
 

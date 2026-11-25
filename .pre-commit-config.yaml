@@ -30,3 +30,10 @@ repos:
         types: [python]
         pass_filenames: false
         args: [app]
+      - id: mypy-sdk
+        name: mypy (sdk)
+        entry: uv run --package labchain-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests
+        language: system
+        files: ^sdk/
+        types: [python]
+        pass_filenames: false
