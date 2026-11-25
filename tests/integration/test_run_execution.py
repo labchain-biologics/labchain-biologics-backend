@@ -8,13 +8,13 @@ from typing import Any
 
 import httpx
 import pytest
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.models.audit import AuditLog
 from app.models.pipeline import JobStatus, PipelineJob
 from app.models.user import Role, User
-from app.models.workspace import Workspace
+from app.models.workspace import Workspace, WorkspaceMembership
 from app.services import run_lifecycle
 from app.services.batch import BatchSubmissionResult, NextflowLaunch, batch_service
 from tests.integration.conftest import FakeS3
@@ -355,12 +355,221 @@ async def test_sse_stream_replays_log_and_ends_on_terminal_status(
         await run_lifecycle.finalize(session, job, success=False, reason="boom")
         await session.commit()
 
-    events = [e async for e in runs_endpoint._log_events("lab-west", launch_id(run))]
+    async with session_factory() as session:
+        lead_id = await session.scalar(select(User.id).where(User.email == "lead@lab.io"))
+    assert lead_id is not None
+    events = [e async for e in runs_endpoint._log_events("lab-west", launch_id(run), lead_id)]
     kinds = [e["event"] for e in events]
     assert kinds.count("log") >= 4
     assert ("status", "failed") in [(e["event"], e["data"]) for e in events]
     assert events[-1] == {"event": "end", "data": "failed"}
     assert any("Run failed: boom" in e["data"] for e in events if e["event"] == "log")
 
-    foreign = [e async for e in runs_endpoint._log_events("lab-east", launch_id(run))]
-    assert foreign == [{"event": "end", "data": "run-not-found"}]
+    # Not a member of lab-east: the stream closes before reading anything.
+    foreign = [e async for e in runs_endpoint._log_events("lab-east", launch_id(run), lead_id)]
+    assert foreign == [{"event": "end", "data": "access-revoked"}]
+
+    # Membership removed while subscribed: the next poll ends the stream.
+    async with session_factory() as session:
+        await session.execute(
+            delete(WorkspaceMembership).where(WorkspaceMembership.user_id == lead_id)
+        )
+        await session.commit()
+    revoked = [e async for e in runs_endpoint._log_events("lab-west", launch_id(run), lead_id)]
+    assert revoked == [{"event": "end", "data": "access-revoked"}]
+
+
+async def _register(
+    client: httpx.AsyncClient,
+    headers: Headers,
+    fake_s3: FakeS3,
+    sample_id: str,
+    pair: str,
+    *,
+    run_id: str | None = None,
+    content: bytes | None = None,
+) -> dict[str, Any]:
+    registered = (
+        await client.post(
+            "/api/v1/fastq/register",
+            json={
+                "filename": f"x_{pair}.fastq.gz",
+                "sampleId": sample_id,
+                "readPair": pair,
+                "sequencingRunId": run_id,
+            },
+            headers=headers,
+        )
+    ).json()
+    fake_s3.objects[registered["s3Key"]] = content or f"reads {pair} {run_id}".encode()
+    verified = await client.post(f"/api/v1/fastq/{registered['id']}/verify", headers=headers)
+    assert verified.json()["verificationStatus"] == "verified"
+    return registered
+
+
+async def _lead_headers(
+    make_user: MakeUser, make_workspace: MakeWorkspace, login: Login
+) -> Headers:
+    lead = await make_user("lead@lab.io")
+    await make_workspace("lab-west", {lead.id: Role.bioinformatics_lead})
+    return {**(await login("lead@lab.io")), "X-LabChain-Workspace": "lab-west"}
+
+
+async def test_launch_refuses_inputs_replaced_after_verification(
+    client: httpx.AsyncClient,
+    make_user: MakeUser,
+    make_workspace: MakeWorkspace,
+    login: Login,
+    fake_s3: FakeS3,
+) -> None:
+    headers, sample = await _setup(client, make_user, make_workspace, login, fake_s3)
+    listed = (await client.get(f"/api/v1/fastq?sampleId={sample['id']}", headers=headers)).json()
+    r1 = next(f for f in listed if f["readPair"] == "R1")
+    fake_s3.objects[r1["s3Key"]] = b"swapped content"
+
+    response = await client.post(
+        "/api/v1/runs", json={"pipelineId": "sarek", "sampleIds": [sample["id"]]}, headers=headers
+    )
+    assert response.status_code == 422
+    assert "changed or missing since verification" in response.json()["detail"]
+
+
+async def test_fastq_keys_are_unique_and_confined_to_the_workspace(
+    client: httpx.AsyncClient,
+    make_user: MakeUser,
+    make_workspace: MakeWorkspace,
+    login: Login,
+) -> None:
+    headers = await _lead_headers(make_user, make_workspace, login)
+    body = {"filename": "same.fastq.gz"}
+    first = (await client.post("/api/v1/fastq/register", json=body, headers=headers)).json()
+    second = (await client.post("/api/v1/fastq/register", json=body, headers=headers)).json()
+    assert first["s3Key"] != second["s3Key"]
+    assert first["s3Key"].startswith("lab-west/fastq/")
+
+    foreign = await client.post(
+        "/api/v1/fastq/register",
+        json={"filename": "x.fastq.gz", "s3Key": "lab-east/fastq/their.fastq.gz"},
+        headers=headers,
+    )
+    assert foreign.status_code == 422
+
+
+async def test_paired_pipelines_need_r2_from_the_same_run(
+    client: httpx.AsyncClient,
+    make_user: MakeUser,
+    make_workspace: MakeWorkspace,
+    login: Login,
+    fake_s3: FakeS3,
+) -> None:
+    headers = await _lead_headers(make_user, make_workspace, login)
+    sample = (
+        await client.post(
+            "/api/v1/samples",
+            json={"sampleCode": "SC1", "modality": "transcriptomics"},
+            headers=headers,
+        )
+    ).json()
+    runs = []
+    for name in ("old", "new"):
+        created = await client.post(
+            "/api/v1/sequencing-runs", json={"runName": name}, headers=headers
+        )
+        runs.append(created.json()["id"])
+    await _register(client, headers, fake_s3, sample["id"], "R2", run_id=runs[0])
+    await _register(client, headers, fake_s3, sample["id"], "R1", run_id=runs[1])
+
+    paired = await client.post(
+        "/api/v1/runs",
+        json={"pipelineId": "scrnaseq", "sampleIds": [sample["id"]]},
+        headers=headers,
+    )
+    assert paired.status_code == 422
+    assert "needs paired reads" in paired.json()["detail"]
+
+    # rnaseq accepts single-end reads: the R2 of the other run is not paired with this R1.
+    single = await client.post(
+        "/api/v1/runs",
+        json={"pipelineId": "rnaseq", "sampleIds": [sample["id"]]},
+        headers=headers,
+    )
+    assert single.status_code == 201, single.text
+    sheet_key = f"lab-west/runs/{single.json()['id']}/samplesheet.csv"
+    row = fake_s3.objects[sheet_key].decode().splitlines()[1].split(",")
+    assert row[2] == ""
+
+
+async def test_samplesheet_rejects_colliding_sample_identifiers(
+    client: httpx.AsyncClient,
+    make_user: MakeUser,
+    make_workspace: MakeWorkspace,
+    login: Login,
+    fake_s3: FakeS3,
+) -> None:
+    headers = await _lead_headers(make_user, make_workspace, login)
+    ids = []
+    for code in ("RNA 1", "RNA_1"):
+        sample = (
+            await client.post(
+                "/api/v1/samples",
+                json={"sampleCode": code, "modality": "transcriptomics"},
+                headers=headers,
+            )
+        ).json()
+        await _register(client, headers, fake_s3, sample["id"], "R1", content=code.encode())
+        ids.append(sample["id"])
+    response = await client.post(
+        "/api/v1/runs", json={"pipelineId": "rnaseq", "sampleIds": ids}, headers=headers
+    )
+    assert response.status_code == 422
+    assert "both become 'RNA_1'" in response.json()["detail"]
+
+
+async def test_failed_output_collection_is_retried_and_late_events_ignored(
+    client: httpx.AsyncClient,
+    make_user: MakeUser,
+    make_workspace: MakeWorkspace,
+    login: Login,
+    fake_s3: FakeS3,
+    submitted: list[NextflowLaunch],
+    session_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(run_lifecycle.settings, "public_api_url", "https://api.test")
+    headers, sample = await _setup(client, make_user, make_workspace, login, fake_s3)
+    run = (
+        await client.post(
+            "/api/v1/runs",
+            json={"pipelineId": "sarek", "sampleIds": [sample["id"]]},
+            headers=headers,
+        )
+    ).json()
+    weblog_url = submitted[0].weblog_url
+    assert weblog_url is not None
+    events_url = weblog_url.removeprefix("https://api.test")
+    fake_s3.objects[f"lab-west/results/{run['id']}/multiqc/multiqc_report.html"] = b"<html/>"
+
+    fake_s3.fail_listing = True
+    done = {"event": "completed", "metadata": {"workflow": {"success": True}}}
+    assert (await client.post(events_url, json=done)).status_code == 204
+    failed = (await client.get(f"/api/v1/runs/{run['id']}", headers=headers)).json()
+    assert failed["status"] == "succeeded"
+    assert failed["progress"]["outputs"] == "pending"
+    assert failed["outputFiles"] == []
+
+    # A late process event changes nothing on the finished run.
+    late = {"event": "process_completed", "trace": {"name": "LATE", "status": "COMPLETED"}}
+    assert (await client.post(events_url, json=late)).status_code == 204
+
+    fake_s3.fail_listing = False
+    await run_lifecycle.reconcile_all(session_factory)
+    collected = (await client.get(f"/api/v1/runs/{run['id']}", headers=headers)).json()
+    assert collected["progress"]["outputs"] == "collected"
+    assert "processesCompleted" not in collected["progress"]
+    assert [f["filename"] for f in collected["outputFiles"]] == ["multiqc_report.html"]
+
+    async with session_factory() as session:
+        audited = await session.scalar(
+            select(AuditLog.after_state).where(AuditLog.action == "register_output")
+        )
+    assert audited is not None and audited["s3Key"].endswith("multiqc_report.html")

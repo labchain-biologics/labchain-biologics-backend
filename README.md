@@ -79,6 +79,18 @@ docker compose --env-file .env stop
 uv run poe migrate
 ```
 
+Upgrading an existing database past migration 0003 creates workspaces from existing data
+but **no memberships** (historical activity does not prove who should have access). Grant
+access explicitly:
+
+```bash
+uv run python scripts/grant_membership.py --email lead@lab.org \
+  --workspace <slug> --role bioinformatics_lead
+```
+
+Migration 0005 resets every FASTQ verification to `pending` (the previous check did not read
+the stored bytes): verify the files again before launching runs.
+
 ### 5. Run the API
 
 ```bash

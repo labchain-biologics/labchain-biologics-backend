@@ -6,9 +6,10 @@ the user role from ``users.role`` to ``workspace_memberships.role``.
 Data migration:
 - one ``workspaces`` row per distinct workspace value already present in domain tables or
   the audit trail (slug = name = existing value);
-- one membership per (user, workspace) pair found in the audit trail, with the user's
-  former global role. Users with no audit activity get no membership and must be added
-  by a workspace lead.
+- no memberships. Before this migration any user could act in any workspace by sending its
+  name in the header, so historical activity (including the audit trail) does not prove
+  who should have access. An operator grants access explicitly afterwards with
+  ``scripts/grant_membership.py``.
 
 Revision ID: 0003_workspaces
 Revises: 0002_audit_immutability
@@ -116,16 +117,6 @@ def upgrade() -> None:
         FROM ({sources}) AS w
         WHERE w.workspace IS NOT NULL AND btrim(w.workspace) <> ''
         GROUP BY w.workspace
-        """
-    )
-    op.execute(
-        """
-        INSERT INTO workspace_memberships (id, workspace_id, user_id, role)
-        SELECT gen_random_uuid(), w.id, u.id, u.role
-        FROM (SELECT DISTINCT actor_id, workspace FROM audit_logs
-              WHERE actor_id IS NOT NULL AND workspace IS NOT NULL) AS a
-        JOIN users u ON u.id = a.actor_id
-        JOIN workspaces w ON w.slug = a.workspace
         """
     )
 

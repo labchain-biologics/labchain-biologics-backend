@@ -32,7 +32,10 @@ from app.services.sample_lifecycle import set_status
 logger = logging.getLogger(__name__)
 
 TERMINAL = frozenset({JobStatus.succeeded, JobStatus.failed, JobStatus.cancelled})
-MAX_OUTPUT_FILES = 2000
+# progress["outputs"]: "pending" until every output file is registered, then "collected".
+OUTPUTS_PENDING = "pending"
+OUTPUTS_COLLECTED = "collected"
+_OUTPUT_BATCH = 500
 _BATCH_ACTIVE = {"SUBMITTED", "PENDING", "RUNNABLE", "STARTING"}
 
 
@@ -70,22 +73,22 @@ def classify_output(key: str) -> OutputFileType:
 
 
 async def collect_outputs(db: AsyncSession, job: PipelineJob) -> int:
-    """Register every object under the run's output directory. Returns the number added."""
+    """
+    Register every object under the run's output directory (all listing pages), each with an
+    audit record. Returns the number added. Already registered keys are skipped, so it can be
+    retried after a partial failure.
+    """
     if not job.output_dir:
         return 0
     prefix = s3_service.key_from_uri(job.output_dir).rstrip("/") + "/"
-    objects: list[StoredObject] = await asyncio.to_thread(
-        s3_service.list_objects, prefix, limit=MAX_OUTPUT_FILES
-    )
+    objects: list[StoredObject] = await asyncio.to_thread(s3_service.list_objects, prefix)
     existing = await db.execute(
         select(RunOutputFile.s3_key).where(RunOutputFile.pipeline_job_id == job.id)
     )
     known = set(existing.scalars().all())
-    added = 0
-    for obj in objects:
-        if obj.key in known:
-            continue
-        db.add(
+    new_objects = [obj for obj in objects if obj.key not in known]
+    for start in range(0, len(new_objects), _OUTPUT_BATCH):
+        batch = [
             RunOutputFile(
                 pipeline_job_id=job.id,
                 workspace=job.workspace,
@@ -95,10 +98,44 @@ async def collect_outputs(db: AsyncSession, job: PipelineJob) -> int:
                 size_bytes=obj.size_bytes,
                 metadata_json={"relativePath": obj.key[len(prefix) :]},
             )
-        )
-        added += 1
+            for obj in new_objects[start : start + _OUTPUT_BATCH]
+        ]
+        db.add_all(batch)
+        await db.flush()
+        for output in batch:
+            await audit_service.record(
+                db,
+                actor=None,
+                action="register_output",
+                entity_type="run_output_file",
+                entity_id=output.id,
+                workspace=job.workspace,
+                after_state={
+                    "pipelineJobId": str(job.id),
+                    "s3Key": output.s3_key,
+                    "fileType": output.file_type.value,
+                    "sizeBytes": output.size_bytes,
+                },
+            )
+    return len(new_objects)
+
+
+async def collect_outputs_tracked(db: AsyncSession, job: PipelineJob) -> None:
+    """
+    Collect outputs and record the outcome in ``progress["outputs"]``. On failure the state
+    stays ``pending`` and ``reconcile_all`` retries it on its next pass.
+    """
+    try:
+        async with db.begin_nested():
+            added = await collect_outputs(db, job)
+    except Exception as exc:  # storage errors must not lose the status change
+        logger.warning("Output collection failed for run %s: %s", job.id, exc)
+        append_log(job, f"Output collection failed, will retry: {exc}")
+        job.progress = {**(job.progress or {}), "outputs": OUTPUTS_PENDING}
+    else:
+        append_log(job, f"{added} output file(s) registered from {job.output_dir}")
+        job.progress = {**(job.progress or {}), "outputs": OUTPUTS_COLLECTED}
     await db.flush()
-    return added
 
 
 async def _job_samples(db: AsyncSession, job: PipelineJob) -> list[Sample]:
@@ -138,13 +175,8 @@ async def finalize(
     append_log(
         job, f"Run {'succeeded' if success else 'failed'}" + (f": {reason}" if reason else "")
     )
-    try:
-        added = await collect_outputs(db, job)
-        append_log(job, f"{added} output file(s) registered from {job.output_dir}")
-    except Exception as exc:  # noqa: BLE001 - storage errors must not lose the status change
-        logger.warning("Output collection failed for run %s: %s", job.id, exc)
-        append_log(job, f"Output collection failed: {exc}")
     await db.flush()
+    await collect_outputs_tracked(db, job)
     await _audit_status(db, job, before, reason)
     if success:
         await set_status(
@@ -177,6 +209,8 @@ def _event_time(event: WeblogEvent) -> datetime:
 
 
 async def apply_weblog_event(db: AsyncSession, job: PipelineJob, event: WeblogEvent) -> None:
+    if job.status in TERMINAL:
+        return  # late or duplicate events never change a finished run
     at = _event_time(event)
     progress: dict[str, Any] = dict(job.progress or {})
     progress["lastEvent"] = event.event
@@ -234,7 +268,10 @@ async def reconcile_batch_job(db: AsyncSession, job: PipelineJob) -> None:
 
 
 async def reconcile_all(session_factory: async_sessionmaker[AsyncSession]) -> int:
-    """One monitor pass over every submitted/running run. Returns the number checked."""
+    """
+    One monitor pass: retry pending output collection of finished runs, then check every
+    submitted/running run against AWS Batch. Returns the number of runs checked.
+    """
     async with session_factory() as db:
         result = await db.execute(
             select(PipelineJob.id).where(
@@ -243,6 +280,19 @@ async def reconcile_all(session_factory: async_sessionmaker[AsyncSession]) -> in
             )
         )
         job_ids = list(result.scalars().all())
+        pending = await db.execute(
+            select(PipelineJob.id).where(
+                PipelineJob.status.in_(list(TERMINAL)),
+                PipelineJob.progress["outputs"].astext == OUTPUTS_PENDING,
+            )
+        )
+        retry_ids = list(pending.scalars().all())
+    for job_id in retry_ids:
+        async with session_factory() as db:
+            job = await db.get(PipelineJob, job_id, with_for_update=True)
+            if job is not None:
+                await collect_outputs_tracked(db, job)
+                await db.commit()
     for job_id in job_ids:
         async with session_factory() as db:
             job = await db.get(PipelineJob, job_id, with_for_update=True)

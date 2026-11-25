@@ -79,6 +79,8 @@ class FastqFile(Base):
     size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     expected_md5: Mapped[str | None] = mapped_column(String(32), nullable=True)
     computed_md5: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # ETag of the exact object version that was verified; inputs must still match it.
+    verified_etag: Mapped[str | None] = mapped_column(String(128), nullable=True)
     verification_status: Mapped[FastqVerificationStatus] = mapped_column(
         Enum(FastqVerificationStatus, name="fastq_verification_status", native_enum=True),
         nullable=False,

@@ -42,6 +42,7 @@ class StoredObject:
 class ObjectChecksum:
     md5: str
     size_bytes: int
+    etag: str
 
 
 class S3Service:
@@ -144,24 +145,24 @@ class S3Service:
         )
         return self.uri(key)
 
-    def list_objects(self, prefix: str, *, limit: int = 5000) -> list[StoredObject]:
-        """All objects under ``prefix`` (paginated), up to ``limit``."""
+    def list_objects(self, prefix: str) -> list[StoredObject]:
+        """Every object under ``prefix``, following all listing pages."""
         found: list[StoredObject] = []
         paginator = self._client.get_paginator("list_objects_v2")
         for page in paginator.paginate(Bucket=self._bucket, Prefix=prefix):
             for item in page.get("Contents", []):
                 found.append(StoredObject(key=item["Key"], size_bytes=int(item.get("Size", 0))))
-                if len(found) >= limit:
-                    return found
         return found
 
     def object_checksum(self, key: str) -> ObjectChecksum | None:
         """
         MD5 and size of a stored object, or ``None`` if it does not exist.
 
-        A single-part upload's ETag is the MD5 of its content, so it is used directly.
-        Multipart uploads have a composite ETag (``<hash>-<parts>``): the object is then
-        streamed and hashed.
+        The ETag of a single-part upload stored unencrypted or with SSE-S3 is the MD5 of its
+        content, so it is used directly. Otherwise (multipart ``<hash>-<parts>`` ETag,
+        SSE-KMS or SSE-C) the object is streamed and hashed, pinned to the ETag read first so
+        a concurrent overwrite cannot be hashed by mistake. ``etag`` identifies the exact
+        object version that was checked.
         """
         try:
             head = self._client.head_object(Bucket=self._bucket, Key=key)
@@ -171,15 +172,29 @@ class S3Service:
                 return None
             raise
         size = int(head.get("ContentLength", 0))
-        etag = str(head.get("ETag", "")).strip('"')
-        if etag and "-" not in etag and len(etag) == 32:
-            return ObjectChecksum(md5=etag.lower(), size_bytes=size)
+        raw_etag = str(head.get("ETag", ""))
+        etag = raw_etag.strip('"')
+        encryption = head.get("ServerSideEncryption")
+        plain_etag = encryption in (None, "AES256") and not head.get("SSECustomerAlgorithm")
+        if plain_etag and "-" not in etag and len(etag) == 32:
+            return ObjectChecksum(md5=etag.lower(), size_bytes=size, etag=etag)
 
         digest = hashlib.md5(usedforsecurity=False)
-        body = self._client.get_object(Bucket=self._bucket, Key=key)["Body"]
+        body = self._client.get_object(Bucket=self._bucket, Key=key, IfMatch=raw_etag)["Body"]
         for chunk in body.iter_chunks(chunk_size=_MD5_CHUNK_BYTES):
             digest.update(chunk)
-        return ObjectChecksum(md5=digest.hexdigest(), size_bytes=size)
+        return ObjectChecksum(md5=digest.hexdigest(), size_bytes=size, etag=etag)
+
+    def current_etag(self, key: str) -> str | None:
+        """ETag of the object now stored at ``key``, or ``None`` if it does not exist."""
+        try:
+            head = self._client.head_object(Bucket=self._bucket, Key=key)
+        except ClientError as exc:
+            error_code = str(exc.response.get("Error", {}).get("Code", ""))
+            if error_code in {"404", "NoSuchKey", "NotFound"}:
+                return None
+            raise
+        return str(head.get("ETag", "")).strip('"')
 
 
 s3_service = S3Service()

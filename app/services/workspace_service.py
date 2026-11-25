@@ -113,6 +113,7 @@ class WorkspaceService:
         role: Role,
         actor: User,
     ) -> tuple[WorkspaceMembership, User]:
+        await self._lock_workspace(db, workspace.id)
         membership, user = await self._get_member(db, workspace_id=workspace.id, user_id=user_id)
         if membership.role == role:
             return membership, user
@@ -141,6 +142,7 @@ class WorkspaceService:
         user_id: uuid.UUID,
         actor: User,
     ) -> None:
+        await self._lock_workspace(db, workspace.id)
         membership, user = await self._get_member(db, workspace_id=workspace.id, user_id=user_id)
         if membership.role == Role.bioinformatics_lead:
             await self._ensure_not_last_lead(db, workspace_id=workspace.id)
@@ -157,6 +159,13 @@ class WorkspaceService:
             workspace=workspace.slug,
             before_state=before,
         )
+
+    async def _lock_workspace(self, db: AsyncSession, workspace_id: uuid.UUID) -> None:
+        """
+        Serialize role changes and removals in a workspace, so two concurrent requests
+        cannot both pass the last-lead check. Held until the transaction ends.
+        """
+        await db.execute(select(Workspace.id).where(Workspace.id == workspace_id).with_for_update())
 
     async def _find(
         self, db: AsyncSession, *, workspace_id: uuid.UUID, user_id: uuid.UUID
@@ -179,6 +188,8 @@ class WorkspaceService:
                 WorkspaceMembership.workspace_id == workspace_id,
                 WorkspaceMembership.user_id == user_id,
             )
+            # Re-read after taking the workspace lock: the role may have just changed.
+            .execution_options(populate_existing=True)
         )
         row = result.one_or_none()
         if row is None:

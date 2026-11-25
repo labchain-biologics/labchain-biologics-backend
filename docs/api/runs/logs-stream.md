@@ -2,7 +2,9 @@
 
 Server-Sent Events (SSE) stream of the run log, read from the database every 2 seconds:
 past lines first, then new lines as they are written. The stream ends when the run is
-finished, was never submitted (execution disabled), or after one hour.
+finished, was never submitted (execution disabled), or after one hour. The subscriber's
+access (active user, active workspace, membership) is re-checked on every poll; if it was
+revoked the stream ends with `end: access-revoked`.
 
 | | |
 | --- | --- |

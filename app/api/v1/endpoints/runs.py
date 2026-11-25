@@ -10,6 +10,7 @@ from datetime import datetime
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sse_starlette.sse import EventSourceResponse
 
@@ -18,6 +19,9 @@ from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.pipeline import JobStatus, PipelineJob
 from app.models.sample import SampleStatus
+from app.models.user import User
+from app.models.workspace import Workspace as WorkspaceModel
+from app.models.workspace import WorkspaceMembership
 from app.schemas.pipeline import PipelineJobRead, RunCreateRequest, RunLogLine, WeblogEvent
 from app.services import run_lifecycle, samplesheet
 from app.services.audit_service import audit_service
@@ -44,6 +48,26 @@ SSE_MAX_SECONDS = 3600.0
 
 def _unprocessable(detail: str) -> HTTPException:
     return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=detail)
+
+
+async def _ensure_inputs_unchanged(entries: list[samplesheet.SamplesheetEntry]) -> None:
+    """Refuse to run on FASTQ objects replaced since they were verified."""
+    changed: list[str] = []
+    for entry in entries:
+        for fastq in entry.files:
+            try:
+                etag = await asyncio.to_thread(s3_service.current_etag, fastq.s3_key)
+            except (BotoCoreError, ClientError) as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Could not check {fastq.filename} in object storage: {exc}",
+                ) from exc
+            if etag != fastq.verified_etag:
+                changed.append(f"{fastq.filename} ({entry.sample.sample_code})")
+    if changed:
+        raise _unprocessable(
+            "FASTQ changed or missing since verification, verify again: " + ", ".join(changed)
+        )
 
 
 def _redact(command: list[str]) -> str:
@@ -93,8 +117,14 @@ async def launch_run(
     samples = await get_workspace_samples(db, workspace, payload.sample_ids)
     if payload.sequencing_run_id is not None:
         await get_workspace_sequencing_run(db, workspace, payload.sequencing_run_id)
-    entries = await samplesheet.collect_entries(db, samples, s3_service.uri)
-    sheet = samplesheet.build_samplesheet(payload.pipeline_id, entries)
+    entries = await samplesheet.collect_entries(
+        db, payload.pipeline_id, workspace, samples, s3_service.uri
+    )
+    try:
+        sheet = samplesheet.build_samplesheet(payload.pipeline_id, entries)
+    except samplesheet.DuplicateSampleIdentifierError as exc:
+        raise _unprocessable(str(exc)) from exc
+    await _ensure_inputs_unchanged(entries)
 
     job_id = uuid.uuid4()
     run_name = f"lc-{payload.pipeline_id}-{job_id.hex[:12]}"
@@ -262,7 +292,7 @@ async def stream_run_logs(
     run_id: uuid.UUID,
     db: DbSession,
     workspace: Workspace,
-    _: LabOrLead,
+    current_user: LabOrLead,
 ) -> EventSourceResponse:
     """
     Server-sent events: ``log`` for each run log line as it is written, ``status`` when the
@@ -270,16 +300,38 @@ async def stream_run_logs(
     hour.
     """
     await _get_workspace_job(db, workspace, run_id)
-    return EventSourceResponse(_log_events(workspace, run_id))
+    return EventSourceResponse(_log_events(workspace, run_id, current_user.id))
 
 
-async def _log_events(workspace: str, run_id: uuid.UUID) -> AsyncIterator[dict[str, str]]:
+async def _still_allowed(session: AsyncSession, workspace: str, user_id: uuid.UUID) -> bool:
+    """The subscriber is still an active user and member of the active workspace."""
+    allowed = await session.scalar(
+        select(WorkspaceMembership.id)
+        .join(WorkspaceModel, WorkspaceMembership.workspace_id == WorkspaceModel.id)
+        .join(User, WorkspaceMembership.user_id == User.id)
+        .where(
+            WorkspaceModel.slug == workspace,
+            WorkspaceModel.is_active.is_(True),
+            WorkspaceMembership.user_id == user_id,
+            User.is_active.is_(True),
+        )
+    )
+    return allowed is not None
+
+
+async def _log_events(
+    workspace: str, run_id: uuid.UUID, user_id: uuid.UUID
+) -> AsyncIterator[dict[str, str]]:
     sent = 0
     last_status: JobStatus | None = None
     waited = 0.0
     while True:
         # A fresh session per poll: the request-scoped session is closed while streaming.
         async with AsyncSessionLocal() as session:
+            # Access is re-checked on every poll: revoking it closes the stream.
+            if not await _still_allowed(session, workspace, user_id):
+                yield {"event": "end", "data": "access-revoked"}
+                return
             job = await session.scalar(
                 select(PipelineJob).where(
                     PipelineJob.id == run_id, PipelineJob.workspace == workspace

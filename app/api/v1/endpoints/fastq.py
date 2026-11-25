@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from pathlib import PurePosixPath
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, HTTPException, Query, status
@@ -25,6 +26,7 @@ from app.services.sample_lifecycle import (
     get_workspace_sequencing_run,
     set_status,
 )
+from app.services.samplesheet import storage_prefix
 
 router = APIRouter(prefix="/fastq", tags=["fastq"])
 
@@ -47,8 +49,18 @@ async def register_fastq(
     )
     if payload.sequencing_run_id is not None:
         await get_workspace_sequencing_run(db, workspace, payload.sequencing_run_id)
-    s3_key = payload.s3_key or s3_service.build_object_key(workspace, "fastq", payload.filename)
+    fastq_id = uuid.uuid4()
+    prefix = storage_prefix(workspace)
+    if payload.s3_key is not None and not payload.s3_key.startswith(prefix):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"s3Key must be under '{prefix}'",
+        )
+    # One key per record by default, so a new upload never replaces another record's file.
+    safe_name = PurePosixPath(payload.filename.replace("\\", "/")).name or "reads.fastq.gz"
+    s3_key = payload.s3_key or f"{prefix}{fastq_id}/{safe_name}"
     fastq = FastqFile(
+        id=fastq_id,
         workspace=workspace,
         filename=payload.filename,
         s3_key=s3_key,
@@ -151,6 +163,11 @@ async def verify_fastq(
     current_user: LabOrLead,
 ) -> FastqVerifyResponse:
     fastq = await _get_workspace_fastq(db, workspace, fastq_id)
+    if not fastq.s3_key.startswith(storage_prefix(workspace)):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"{fastq.filename} is stored outside this workspace and cannot be verified",
+        )
     try:
         checksum = await asyncio.to_thread(s3_service.object_checksum, fastq.s3_key)
     except (BotoCoreError, ClientError) as exc:
@@ -167,6 +184,7 @@ async def verify_fastq(
     computed = checksum.md5
     fastq.computed_md5 = computed
     fastq.size_bytes = checksum.size_bytes
+    fastq.verified_etag = checksum.etag
     if fastq.expected_md5 is None or fastq.expected_md5.lower() == computed:
         fastq.verification_status = FastqVerificationStatus.verified
     else:
@@ -183,6 +201,7 @@ async def verify_fastq(
         after_state={
             "computedMd5": computed,
             "sizeBytes": fastq.size_bytes,
+            "etag": checksum.etag,
             "expectedMd5": fastq.expected_md5,
             "verificationStatus": fastq.verification_status.value,
         },

@@ -134,3 +134,23 @@ def test_object_checksum_missing_object(mock_s3_client: MagicMock) -> None:
         {"Error": {"Code": "404", "Message": "Not Found"}}, "HeadObject"
     )
     assert S3Service(client=mock_s3_client).object_checksum("k") is None
+
+
+def test_object_checksum_hashes_kms_encrypted_objects(mock_s3_client: MagicMock) -> None:
+    # SSE-KMS ETags are not content MD5s, even for single-part uploads.
+    mock_s3_client.head_object.return_value = {
+        "ContentLength": 4,
+        "ETag": '"0123456789abcdef0123456789abcdef"',
+        "ServerSideEncryption": "aws:kms",
+    }
+    body = MagicMock()
+    body.iter_chunks.return_value = [b"test"]
+    mock_s3_client.get_object.return_value = {"Body": body}
+    checksum = S3Service(client=mock_s3_client).object_checksum("k")
+    assert checksum is not None
+    assert checksum.md5 == "098f6bcd4621d373cade4e832627b4f6"
+    assert checksum.etag == "0123456789abcdef0123456789abcdef"
+    # The streamed object is pinned to the version whose headers were read.
+    assert mock_s3_client.get_object.call_args.kwargs["IfMatch"] == (
+        '"0123456789abcdef0123456789abcdef"'
+    )

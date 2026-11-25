@@ -26,10 +26,16 @@ class SamplesheetEntry:
     sample: Sample
     fastq_1: str
     fastq_2: str | None
+    # FASTQ records used, so callers can check the stored objects are still the verified ones.
+    files: tuple[FastqFile, ...] = ()
 
 
 class UnsupportedPipelineError(ValueError):
     """The pipeline needs metadata the LIMS does not hold, so no samplesheet can be built."""
+
+
+class DuplicateSampleIdentifierError(ValueError):
+    """Two samples map to the same pipeline sample identifier after normalization."""
 
 
 def _safe_name(value: str) -> str:
@@ -105,6 +111,13 @@ _BUILDERS: dict[str, tuple[list[str], RowBuilder]] = {
 }
 
 
+# nf-core pipelines in the catalog whose samplesheet schema requires both mates.
+REQUIRES_PAIRED_READS = frozenset({"sarek", "scrnaseq", "ampliseq", "mag"})
+
+# Column holding the sample identifier the pipeline groups reads by.
+_ID_COLUMN = {"ampliseq": "sampleID"}
+
+
 def supports(pipeline_id: str) -> bool:
     return pipeline_id in _BUILDERS
 
@@ -117,12 +130,27 @@ def build_samplesheet(pipeline_id: str, entries: Sequence[SamplesheetEntry]) -> 
             "(it needs metadata the LIMS does not record, e.g. ChIP antibody/control pairs)"
         )
     columns, build = _BUILDERS[pipeline_id]
+    rows = [build(entry) for entry in entries]
+    id_column = _ID_COLUMN.get(pipeline_id, "sample")
+    seen: dict[str, str] = {}
+    for entry, row in zip(entries, rows, strict=True):
+        identifier = row[id_column]
+        if identifier in seen:
+            raise DuplicateSampleIdentifierError(
+                f"Samples '{seen[identifier]}' and '{entry.sample.sample_code}' both become "
+                f"'{identifier}' in the nf-core/{pipeline_id} samplesheet; rename one of them"
+            )
+        seen[identifier] = entry.sample.sample_code
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=columns, lineterminator="\n")
     writer.writeheader()
-    for entry in entries:
-        writer.writerow(build(entry))
+    writer.writerows(rows)
     return buffer.getvalue()
+
+
+def storage_prefix(workspace: str) -> str:
+    """Key prefix every FASTQ object of ``workspace`` must live under."""
+    return f"{workspace}/fastq/"
 
 
 def _latest(files: list[FastqFile], read_pair: str) -> FastqFile | None:
@@ -132,12 +160,16 @@ def _latest(files: list[FastqFile], read_pair: str) -> FastqFile | None:
 
 async def collect_entries(
     db: AsyncSession,
+    pipeline_id: str,
+    workspace: str,
     samples: Sequence[Sample],
     to_uri: Callable[[str], str],
 ) -> list[SamplesheetEntry]:
     """
-    Pick, for each sample, its most recent verified R1 (required) and R2 (optional, same
-    sequencing run as R1 when possible). Raises 422 naming every sample without reads.
+    Pick, for each sample, its most recent verified R1 and the most recent verified R2 of the
+    same sequencing run. Only FASTQ records of ``workspace`` stored under its namespace are
+    considered. Raises 422 naming every sample without usable reads (R2 is required for
+    pipelines in ``REQUIRES_PAIRED_READS``).
     """
     if not samples:
         raise HTTPException(
@@ -146,34 +178,51 @@ async def collect_entries(
         )
     result = await db.execute(
         select(FastqFile).where(
+            FastqFile.workspace == workspace,
             FastqFile.sample_id.in_([s.id for s in samples]),
             FastqFile.verification_status == FastqVerificationStatus.verified,
+            FastqFile.verified_etag.is_not(None),
+            FastqFile.s3_key.startswith(storage_prefix(workspace), autoescape=True),
         )
     )
     by_sample: dict[object, list[FastqFile]] = {}
     for fastq in result.scalars().all():
         by_sample.setdefault(fastq.sample_id, []).append(fastq)
 
+    paired = pipeline_id in REQUIRES_PAIRED_READS
     entries: list[SamplesheetEntry] = []
-    missing: list[str] = []
+    missing_r1: list[str] = []
+    missing_r2: list[str] = []
     for sample in samples:
         files = by_sample.get(sample.id, [])
         r1 = _latest(files, "R1")
         if r1 is None:
-            missing.append(sample.sample_code)
+            missing_r1.append(sample.sample_code)
             continue
+        # Never pair reads from different sequencing runs.
         same_run = [f for f in files if f.sequencing_run_id == r1.sequencing_run_id]
-        r2 = _latest(same_run, "R2") or _latest(files, "R2")
+        r2 = _latest(same_run, "R2")
+        if r2 is None and paired:
+            missing_r2.append(sample.sample_code)
+            continue
         entries.append(
             SamplesheetEntry(
                 sample=sample,
                 fastq_1=to_uri(r1.s3_key),
                 fastq_2=to_uri(r2.s3_key) if r2 else None,
+                files=(r1, r2) if r2 else (r1,),
             )
         )
-    if missing:
+    problems = []
+    if missing_r1:
+        problems.append(f"No verified R1 FASTQ for sample(s): {', '.join(missing_r1)}")
+    if missing_r2:
+        problems.append(
+            f"nf-core/{pipeline_id} needs paired reads; no verified R2 from the same "
+            f"sequencing run for sample(s): {', '.join(missing_r2)}"
+        )
+    if problems:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f"No verified R1 FASTQ for sample(s): {', '.join(missing)}",
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=". ".join(problems)
         )
     return entries

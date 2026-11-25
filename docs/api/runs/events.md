@@ -37,5 +37,6 @@ written to the run log. A wrong token gets `404`.
 | `error` | Log line, `progress.errorMessage` |
 | `completed` | Status `succeeded` or `failed` (`metadata.workflow.success`), outputs registered, samples `completed` on success |
 
-Events for a finished run are ignored, so retries and late events are harmless. Status
+Events for a finished run are ignored entirely (no log line, no progress change), so retries
+and late events are harmless. Status
 changes are written to the audit trail with no user actor.

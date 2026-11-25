@@ -12,8 +12,12 @@ Launch an nf-core pipeline on LIMS samples.
 
 1. The pipeline and revision are checked against the [catalog](../pipelines/list.md)
    (`pipelineVersion` must be one of `versions`; `latest` means the default `version`).
-2. For each sample, the most recent **verified** R1 FASTQ (and R2 from the same sequencing
-   run when present) is selected. A sample without verified reads makes the request fail.
+2. For each sample, the most recent **verified** R1 FASTQ of the workspace and the most
+   recent verified R2 **of the same sequencing run** are selected. Reads from different runs
+   are never paired. `sarek`, `scrnaseq`, `ampliseq` and `mag` require the R2; the others
+   accept single-end reads. Each selected object must still be the version that was verified
+   (same ETag), and two samples may not map to the same pipeline sample identifier
+   (`RNA 1` and `RNA_1` both become `RNA_1`).
 3. The pipeline's samplesheet is generated and stored at
    `s3://<bucket>/<workspace>/runs/<runId>/samplesheet.csv`.
 4. The Nextflow head job is submitted to AWS Batch with:
@@ -33,7 +37,10 @@ submitted. Samples keep their status.
 
 Afterwards the run status follows Nextflow [weblog events](events.md) and/or AWS Batch
 (polled every `RUN_MONITOR_INTERVAL_SECONDS`). On completion, every file under the output
-directory is registered as a result, and on success the samples move to `completed`.
+directory is registered as a result (every listing page, each with an audit record), and on
+success the samples move to `completed`. If storage is unavailable at that moment the run
+keeps its final status, `progress.outputs` stays `pending`, and the monitor retries the
+collection until it succeeds (`collected`).
 
 ### Samplesheets
 
@@ -66,7 +73,7 @@ shell is involved).
 | Status | When |
 | --- | --- |
 | `404` | Unknown pipeline |
-| `422` | Unknown version, unsupported pipeline, invalid parameter, sample from another workspace, sample without verified reads |
+| `422` | Unknown version, unsupported pipeline, invalid parameter, sample from another workspace, sample without verified reads, missing R2 for a paired pipeline, FASTQ changed since verification, colliding sample identifiers |
 | `502` | Object storage or AWS Batch unavailable |
 
 ## Response model (`PipelineJobRead`)

@@ -25,11 +25,13 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import hash_password
 from app.main import app
 from app.models.user import Role, User
 from app.models.workspace import Workspace, WorkspaceMembership
+from app.services import batch
 from app.services.s3 import ObjectChecksum, StoredObject, s3_service
 
 TEST_DATABASE_URL = os.environ.get(
@@ -166,6 +168,12 @@ class FakeS3:
 
     def __init__(self) -> None:
         self.objects: dict[str, bytes] = {}
+        self.fail_listing = False
+
+    @staticmethod
+    def _etag(data: bytes) -> str:
+        # Content-derived, like a single-part S3 ETag: replacing the bytes changes it.
+        return hashlib.md5(data).hexdigest()
 
     def put_text(self, key: str, body: str, *, content_type: str = "text/plain") -> str:
         self.objects[key] = body.encode("utf-8")
@@ -175,14 +183,22 @@ class FakeS3:
         data = self.objects.get(key)
         if data is None:
             return None
-        return ObjectChecksum(md5=hashlib.md5(data).hexdigest(), size_bytes=len(data))
+        return ObjectChecksum(
+            md5=hashlib.md5(data).hexdigest(), size_bytes=len(data), etag=self._etag(data)
+        )
 
-    def list_objects(self, prefix: str, *, limit: int = 5000) -> list[StoredObject]:
+    def current_etag(self, key: str) -> str | None:
+        data = self.objects.get(key)
+        return None if data is None else self._etag(data)
+
+    def list_objects(self, prefix: str) -> list[StoredObject]:
+        if self.fail_listing:
+            raise ConnectionError("S3 listing unavailable")
         return [
             StoredObject(key=key, size_bytes=len(data))
             for key, data in sorted(self.objects.items())
             if key.startswith(prefix)
-        ][:limit]
+        ]
 
     def uri(self, key: str) -> str:
         return f"s3://test-bucket/{key}"
@@ -194,7 +210,14 @@ class FakeS3:
 @pytest.fixture
 def fake_s3(monkeypatch: pytest.MonkeyPatch) -> FakeS3:
     fake = FakeS3()
-    for name in ("put_text", "object_checksum", "list_objects", "uri", "key_from_uri"):
+    for name in (
+        "put_text",
+        "object_checksum",
+        "current_etag",
+        "list_objects",
+        "uri",
+        "key_from_uri",
+    ):
         monkeypatch.setattr(s3_service, name, getattr(fake, name))
     monkeypatch.setattr(
         s3_service,
@@ -207,3 +230,10 @@ def fake_s3(monkeypatch: pytest.MonkeyPatch) -> FakeS3:
         lambda key, **_: f"https://download.test/{key}",
     )
     return fake
+
+
+@pytest.fixture(autouse=True)
+def no_real_execution(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Integration tests never reach AWS Batch or call back a real URL, whatever .env says."""
+    monkeypatch.setattr(batch, "get_batch_client", lambda: None)
+    monkeypatch.setattr(settings, "public_api_url", None)
