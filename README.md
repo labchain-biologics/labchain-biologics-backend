@@ -194,3 +194,15 @@ the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).
 
 In short: you may use, modify and self-host it. If you run a modified version as a network
 service, you must offer its users the corresponding source code under the same license.
+
+### Python SDK: Apache-2.0
+
+The Python SDK in [`sdk/`](sdk/) (`labchain-biologics-sdk`) is **not** under the AGPL: it is
+licensed under the [Apache License 2.0](sdk/LICENSE) (`Apache-2.0`). It contains no server
+code and only talks to the server over its public HTTP API, so scripts, notebooks and
+applications that import it can use any licence, including proprietary ones.
+
+| Path | Licence |
+| --- | --- |
+| `sdk/` | Apache-2.0 ([`sdk/LICENSE`](sdk/LICENSE)) |
+| Everything else (server, migrations, docs, scripts, tests) | AGPL-3.0-only ([`LICENSE`](LICENSE)) |
