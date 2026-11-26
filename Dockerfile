@@ -35,7 +35,11 @@ LABEL org.opencontainers.image.title="Titerlane Biologics API" \
       org.opencontainers.image.licenses="AGPL-3.0-only" \
       org.opencontainers.image.source="https://github.com/titerlane-biologics/titerlane-biologics-backend"
 
-RUN groupadd --system --gid 10001 titerlane \
+# Pick up Debian security fixes published after the base image was built.
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 titerlane \
     && useradd --system --uid 10001 --gid titerlane --no-create-home --shell /usr/sbin/nologin titerlane
 
 ENV PATH="/opt/venv/bin:${PATH}" \
