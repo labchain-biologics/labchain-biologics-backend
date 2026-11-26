@@ -1,0 +1,74 @@
+# Production Docker Compose for a self-hosted Titerlane Biologics API.
+# Guide: docs/self-hosting.md. Run from this directory:
+#   docker compose --env-file .env up -d
+#
+# Object storage (S3 or an S3-compatible service) is not part of this file: point the API at
+# an existing bucket with the S3_* variables in .env.
+
+name: titerlane
+
+x-api-common: &api-common
+  image: ${TITERLANE_IMAGE:-ghcr.io/titerlane-biologics/titerlane-biologics-backend}:${TITERLANE_VERSION:?set TITERLANE_VERSION in .env (e.g. 0.1.0)}
+  env_file: .env
+  environment:
+    SECRETS_DIR: /run/secrets
+  secrets:
+    - secret_key
+    - database_url
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: titerlane
+      POSTGRES_DB: titerlane
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U titerlane -d titerlane"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    # Not published on the host: only the API containers reach it.
+
+  migrate:
+    <<: *api-common
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *api-common
+    restart: unless-stopped
+    ports:
+      # Loopback only: put a TLS-terminating reverse proxy in front (see the guide).
+      - "127.0.0.1:${TITERLANE_PORT:-8000}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+secrets:
+  secret_key:
+    file: ./secrets/secret_key
+  database_url:
+    file: ./secrets/database_url
+  postgres_password:
+    file: ./secrets/postgres_password
+
+volumes:
+  pg_data:
