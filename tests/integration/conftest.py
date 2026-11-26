@@ -2,7 +2,7 @@
 Integration fixtures: the real FastAPI app against a real PostgreSQL database.
 
 The database comes from ``TEST_DATABASE_URL`` (default: the docker compose Postgres on
-port 5433, database ``labchain_test``). It is created if missing and migrated to head once
+port 5433, database ``titerlane_test``). It is created if missing and migrated to head once
 per session. Tables are truncated before each test. When Postgres is unreachable the
 integration tests are skipped, so ``uv run poe test`` keeps working without Docker.
 """
@@ -36,7 +36,7 @@ from app.services.s3 import ObjectChecksum, StoredObject, s3_service
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
-    "postgresql+asyncpg://labchain:labchain@localhost:5433/labchain_test",
+    "postgresql+asyncpg://titerlane:titerlane@localhost:5433/titerlane_test",
 )
 PASSWORD = "IntegrationPass1"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

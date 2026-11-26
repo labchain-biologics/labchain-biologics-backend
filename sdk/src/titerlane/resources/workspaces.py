@@ -5,8 +5,8 @@ from __future__ import annotations
 import builtins
 import uuid
 
-from labchain.models import Member, MemberCreate, MemberUpdate, Role, Workspace, WorkspaceCreate
-from labchain.resources._base import Resource, parse, parse_list
+from titerlane.models import Member, MemberCreate, MemberUpdate, Role, Workspace, WorkspaceCreate
+from titerlane.resources._base import Resource, parse, parse_list
 
 
 class Workspaces(Resource):

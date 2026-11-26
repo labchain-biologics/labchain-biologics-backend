@@ -1,9 +1,9 @@
 [project]
-name = "labchain-biologics"
+name = "titerlane-biologics"
 version = "0.1.0"
-description = "LabChain Biologics — FastAPI LIMS & Nextflow orchestration backend"
+description = "Titerlane Biologics — FastAPI LIMS & Nextflow orchestration backend"
 requires-python = ">=3.11"
-authors = [{ name = "LabChain Biologics" }]
+authors = [{ name = "Titerlane Biologics" }]
 license = "AGPL-3.0-only"
 license-files = ["LICENSE"]
 dependencies = [
@@ -41,7 +41,7 @@ docs = [
 ]
 
 [project.scripts]
-labchain-server = "uvicorn:main"
+titerlane-server = "uvicorn:main"
 
 [tool.uv.workspace]
 # The Python SDK (Apache-2.0) is developed here so API and client change together.
@@ -80,7 +80,7 @@ plugins = ["pydantic.mypy"]
 
 [tool.poe.tasks]
 test = { cmd = "uv run pytest", help = "Run the test suite" }
-e2e = { cmd = "uv run --package labchain-biologics-sdk python scripts/e2e_api_walkthrough.py", help = "End-to-end API walkthrough through the Python SDK (running API required)" }
+e2e = { cmd = "uv run --package titerlane-biologics-sdk python scripts/e2e_api_walkthrough.py", help = "End-to-end API walkthrough through the Python SDK (running API required)" }
 check = { cmd = "uv run pre-commit run --all-files", help = "Run pre-commit hooks" }
 migrate = { cmd = "uv run alembic upgrade head", help = "Apply database migrations" }
 start-local-run = { cmd = "docker compose --env-file .env up -d", help = "Launch local run" }
@@ -90,5 +90,5 @@ start-dev = { cmd = "uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 
 openapi = { cmd = "uv run python scripts/export_openapi.py", help = "Export the OpenAPI contract to openapi.json" }
 docs-serve = { cmd = "mkdocs serve", help = "Serve MkDocs locally (requires: uv sync --extra docs)" }
 docs-build = { cmd = "mkdocs build --strict", help = "Build MkDocs site (requires: uv sync --extra docs)" }
-sdk-test = { cmd = "uv run --package labchain-biologics-sdk pytest sdk", help = "Run the Python SDK tests" }
-sdk-typecheck = { cmd = "uv run --package labchain-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests", help = "Type-check the Python SDK" }
+sdk-test = { cmd = "uv run --package titerlane-biologics-sdk pytest sdk", help = "Run the Python SDK tests" }
+sdk-typecheck = { cmd = "uv run --package titerlane-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests", help = "Type-check the Python SDK" }

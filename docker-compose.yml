@@ -1,24 +1,24 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: labchain-postgres
+    container_name: titerlane-postgres
     environment:
-      POSTGRES_USER: labchain
-      POSTGRES_PASSWORD: labchain
-      POSTGRES_DB: labchain
+      POSTGRES_USER: titerlane
+      POSTGRES_PASSWORD: titerlane
+      POSTGRES_DB: titerlane
     ports:
       - "5433:5432"
     volumes:
-      - labchain_pg_data:/var/lib/postgresql/data
+      - titerlane_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U labchain -d labchain"]
+      test: ["CMD-SHELL", "pg_isready -U titerlane -d titerlane"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   localstack:
     image: localstack/localstack:4.0
-    container_name: labchain-localstack
+    container_name: titerlane-localstack
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
@@ -28,7 +28,7 @@ services:
     ports:
       - "4566:4566"
     volumes:
-      - labchain_localstack_data:/var/lib/localstack
+      - titerlane_localstack_data:/var/lib/localstack
       - ./scripts/localstack-init.sh:/etc/localstack/init/ready.d/init-s3.sh:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
@@ -37,5 +37,5 @@ services:
       retries: 12
 
 volumes:
-  labchain_pg_data:
-  labchain_localstack_data:
+  titerlane_pg_data:
+  titerlane_localstack_data:

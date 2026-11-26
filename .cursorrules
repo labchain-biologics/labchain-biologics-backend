@@ -1,8 +1,8 @@
-# LabChain Biologics — Cursor Repository Rules
+# Titerlane Biologics — Cursor Repository Rules
 
 ## Product context
 
-LabChain Biologics is a regulated multi-omics LIMS + bioinformatics orchestration platform.
+Titerlane Biologics is a regulated multi-omics LIMS + bioinformatics orchestration platform.
 This repository is the FastAPI async backend. Prefer production-grade, fully written code.
 Never leave TODO, FIXME, placeholder, or truncated implementations.
 
@@ -22,7 +22,7 @@ Never leave TODO, FIXME, placeholder, or truncated implementations.
 - Pydantic schemas expose camelCase aliases (`rinDin`, `concentrationNgUl`) via `model_config = ConfigDict(populate_by_name=True, from_attributes=True)`.
 - Never mutate or delete audit trail rows (21 CFR Part 11). Append-only via `audit_service.record`.
 - Enforce RBAC with `RequireRole`: `lab_technician` vs `bioinformatics_lead`. Pipeline launch is lead-only.
-- Honor `X-LabChain-Workspace` for multi-tenant scoping; expose it in CORS.
+- Honor `X-Titerlane-Workspace` for multi-tenant scoping; expose it in CORS.
 - Prefer explicit types, structured HTTPException detail messages, and audit on every mutation.
 - Keep endpoint modules thin; put AWS/S3/Batch logic in `app/services/`.
 

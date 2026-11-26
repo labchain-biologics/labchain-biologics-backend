@@ -27,7 +27,7 @@ The body fields plus `id`, `workspace`, `createdBy` and `createdAt`. Creation is
 ```bash
 curl -s -X POST 'http://localhost:8000/api/v1/sequencing-runs' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: helix-genomics' \
+  -H 'X-Titerlane-Workspace: helix-genomics' \
   -H 'Content-Type: application/json' \
   -d '{"runName": "RUN-2026-11-25", "flowcellId": "HVKJ2DSX5", "readLength": "2x150"}'
 ```

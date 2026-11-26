@@ -4,14 +4,14 @@ This page follows a sample from registration to results. Examples assume a confi
 (see [Configure](index.md#configure)):
 
 ```python
-from labchain import Client
+from titerlane import Client
 
 client = Client()
 ```
 
 The SDK uses Python names (`sample_code`, `qc_status`); the API's camelCase JSON is handled
 for you. Enum arguments accept the enum (`QcStatus.pass_`) or its string value (`"pass"`).
-Models and enums live in `labchain.models`.
+Models and enums live in `titerlane.models`.
 
 ## Samples
 
@@ -34,7 +34,7 @@ client.samples.update(sample.id, qc_status="pass", qc_notes="DIN 7.9")
 You can also pass a model instead of keyword arguments:
 
 ```python
-from labchain.models import SampleCreate
+from titerlane.models import SampleCreate
 
 client.samples.create(SampleCreate(sample_code="WGS-043", modality="genomics"))
 ```
@@ -158,7 +158,7 @@ print(run.status, run.execution_submitted)
 ### Wait for the end
 
 ```python
-from labchain import RunFailedError, RunTimeoutError
+from titerlane import RunFailedError, RunTimeoutError
 
 try:
     run = client.runs.wait(run.id, timeout=6 * 3600, poll_interval=30)

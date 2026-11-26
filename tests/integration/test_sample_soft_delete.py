@@ -21,7 +21,7 @@ Login = Callable[[str], Awaitable[dict[str, str]]]
 
 
 def ws(headers: dict[str, str], slug: str) -> dict[str, str]:
-    return {**headers, "X-LabChain-Workspace": slug}
+    return {**headers, "X-Titerlane-Workspace": slug}
 
 
 async def _setup(

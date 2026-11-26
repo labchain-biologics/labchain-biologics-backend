@@ -5,19 +5,19 @@ from __future__ import annotations
 from typing import Any
 
 
-class LabChainError(Exception):
+class TiterlaneError(Exception):
     """Base class of every error raised by the SDK."""
 
 
-class ConfigurationError(LabChainError):
+class ConfigurationError(TiterlaneError):
     """The client is missing something it needs (base URL, token, workspace)."""
 
 
-class APIConnectionError(LabChainError):
+class APIConnectionError(TiterlaneError):
     """The API could not be reached (DNS, refused connection, timeout)."""
 
 
-class APIError(LabChainError):
+class APIError(TiterlaneError):
     """The API answered with an error status. ``detail`` is the server's ``detail`` field."""
 
     def __init__(self, status_code: int, detail: Any, *, method: str, path: str) -> None:
@@ -56,18 +56,18 @@ class ServerError(APIError):
     """5xx: the server or one of its dependencies (object storage, AWS Batch) failed."""
 
 
-class ChecksumMismatchError(LabChainError):
+class ChecksumMismatchError(TiterlaneError):
     """A file's MD5 does not match the expected checksum."""
 
 
-class ExecutionDisabledError(LabChainError):
+class ExecutionDisabledError(TiterlaneError):
     """
     The run was recorded but will never execute: pipeline execution is disabled on this
     server (``executionSubmitted`` is false). Waiting for it would never end.
     """
 
 
-class RunFailedError(LabChainError):
+class RunFailedError(TiterlaneError):
     """The run ended with status ``failed`` or ``cancelled``."""
 
     def __init__(self, run_id: str, status: str, message: str | None) -> None:
@@ -77,7 +77,7 @@ class RunFailedError(LabChainError):
         super().__init__(f"Run {run_id} ended with status {status}{suffix}")
 
 
-class RunTimeoutError(LabChainError, TimeoutError):
+class RunTimeoutError(TiterlaneError, TimeoutError):
     """The run did not finish within the requested time. It keeps running on the server."""
 
 

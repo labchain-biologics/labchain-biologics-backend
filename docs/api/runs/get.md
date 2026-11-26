@@ -43,7 +43,7 @@ No body.
 ```bash
 curl -s 'http://localhost:8000/api/v1/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo'
+  -H 'X-Titerlane-Workspace: demo'
 ```
 
 ```json
@@ -60,9 +60,9 @@ curl -s 'http://localhost:8000/api/v1/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
   "awsBatchJobId": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
   "executionSubmitted": true,
   "nextflowRunName": "lc-rnaseq-bbbbbbbbbbbb",
-  "workDir": "s3://labchain-biologics/nextflow-work/demo/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-  "outputDir": "s3://labchain-biologics/demo/results/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-  "samplesheetUri": "s3://labchain-biologics/demo/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/samplesheet.csv",
+  "workDir": "s3://titerlane-biologics/nextflow-work/demo/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "outputDir": "s3://titerlane-biologics/demo/results/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "samplesheetUri": "s3://titerlane-biologics/demo/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/samplesheet.csv",
   "progress": { "processesCompleted": 42, "lastEvent": "completed" },
   "launchedBy": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
   "createdAt": "2026-08-10T12:00:00Z",

@@ -91,13 +91,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: labchain
-          POSTGRES_PASSWORD: labchain
-          POSTGRES_DB: labchain
+          POSTGRES_USER: titerlane
+          POSTGRES_PASSWORD: titerlane
+          POSTGRES_DB: titerlane
         ports:
           - 5433:5432
         options: >-
-          --health-cmd "pg_isready -U labchain -d labchain"
+          --health-cmd "pg_isready -U titerlane -d titerlane"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -116,7 +116,7 @@ jobs:
 
       - name: Run unit and integration tests
         env:
-          TEST_DATABASE_URL: postgresql+asyncpg://labchain:labchain@localhost:5433/labchain_test
+          TEST_DATABASE_URL: postgresql+asyncpg://titerlane:titerlane@localhost:5433/titerlane_test
         run: uv run poe test
 
       - name: Run Python SDK tests
@@ -217,7 +217,7 @@ jobs:
       - name: Import FastAPI application
         env:
           SECRET_KEY: ci-smoke-secret-key-at-least-32-characters-long
-          DATABASE_URL: postgresql+asyncpg://labchain:labchain@localhost:5432/labchain
+          DATABASE_URL: postgresql+asyncpg://titerlane:titerlane@localhost:5432/titerlane
         run: uv run python -c "from app.main import app; assert app.title"
 
       - name: Check committed OpenAPI contract is up to date

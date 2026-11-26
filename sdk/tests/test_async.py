@@ -20,7 +20,7 @@ import pytest
 from fakes import BASE_URL, TOKEN, WORKSPACE, FakeServer, body_of, ok, run_json, sample_json
 from test_workflows import READS, STREAM, _serve_fastq, _serve_result
 
-from labchain import (
+from titerlane import (
     APIConnectionError,
     AsyncClient,
     AuthenticationError,
@@ -34,7 +34,7 @@ from labchain import (
     RunFailedError,
     ServerError,
 )
-from labchain.models import FastqVerificationStatus, JobStatus
+from titerlane.models import FastqVerificationStatus, JobStatus
 
 T = TypeVar("T")
 
@@ -154,8 +154,8 @@ def test_sends_auth_workspace_and_user_agent(aclient: AsyncClient, server: FakeS
     assert sample.sample_code == "S-001"
     request = server.last("GET", "/api/v1/samples")
     assert request.headers["Authorization"] == f"Bearer {TOKEN}"
-    assert request.headers["X-LabChain-Workspace"] == WORKSPACE
-    assert request.headers["User-Agent"].startswith("labchain-biologics-sdk/")
+    assert request.headers["X-Titerlane-Workspace"] == WORKSPACE
+    assert request.headers["User-Agent"].startswith("titerlane-biologics-sdk/")
 
 
 def test_with_workspace_and_missing_workspace(server: FakeServer) -> None:
@@ -169,20 +169,20 @@ def test_with_workspace_and_missing_workspace(server: FakeServer) -> None:
 
     run(client, use)
     assert len(server.requests) == 1
-    assert server.requests[0].headers["X-LabChain-Workspace"] == "lab-east"
+    assert server.requests[0].headers["X-Titerlane-Workspace"] == "lab-east"
 
 
 def test_reads_configuration_from_environment(
     server: FakeServer, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("LABCHAIN_URL", BASE_URL)
-    monkeypatch.setenv("LABCHAIN_TOKEN", "lcb_pat_from_env")
-    monkeypatch.setenv("LABCHAIN_WORKSPACE", "lab-env")
+    monkeypatch.setenv("TITERLANE_URL", BASE_URL)
+    monkeypatch.setenv("TITERLANE_TOKEN", "lcb_pat_from_env")
+    monkeypatch.setenv("TITERLANE_WORKSPACE", "lab-env")
     server.on("GET", "/api/v1/samples", ok([]))
     run(AsyncClient(transport=httpx.MockTransport(server)), lambda c: c.samples.list())
     request = server.last("GET", "/api/v1/samples")
     assert request.headers["Authorization"] == "Bearer lcb_pat_from_env"
-    assert request.headers["X-LabChain-Workspace"] == "lab-env"
+    assert request.headers["X-Titerlane-Workspace"] == "lab-env"
 
 
 def test_login_then_uses_the_session_token(server: FakeServer) -> None:
@@ -298,7 +298,7 @@ def test_upload_registers_puts_and_verifies(
     assert put.headers["Content-Type"] == "application/gzip"
     assert put.headers["Content-Length"] == str(len(READS))
     assert "Authorization" not in put.headers
-    assert "X-LabChain-Workspace" not in put.headers
+    assert "X-Titerlane-Workspace" not in put.headers
     assert [r.method for r in server.requests] == ["POST", "PUT", "POST", "GET"]
 
 

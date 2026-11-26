@@ -9,9 +9,9 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from labchain.errors import ChecksumMismatchError
-from labchain.models import OutputFileType, ResultDownload, ResultFile
-from labchain.resources._base import Resource, parse, parse_list
+from titerlane.errors import ChecksumMismatchError
+from titerlane.models import OutputFileType, ResultDownload, ResultFile
+from titerlane.resources._base import Resource, parse, parse_list
 
 
 class Results(Resource):
@@ -46,7 +46,7 @@ class Results(Resource):
         link = self.download_url(output_id)
         target = download_target(dest, link)
         digest = hashlib.md5(usedforsecurity=False)
-        fd, tmp_name = tempfile.mkstemp(prefix=".labchain-", dir=target.parent)
+        fd, tmp_name = tempfile.mkstemp(prefix=".titerlane-", dir=target.parent)
         tmp_path = Path(tmp_name)
         try:
             with os.fdopen(fd, "wb") as handle, self._http.storage_get(link.download_url) as resp:

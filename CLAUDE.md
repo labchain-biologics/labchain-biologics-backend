@@ -1,6 +1,6 @@
-# CLAUDE.md — labchain-biologics-backend
+# CLAUDE.md — titerlane-biologics-backend
 
-Open-source (AGPL-3.0-only, see `LICENSE`) FastAPI backend for LabChain Biologics: multi-omics LIMS, nf-core/Nextflow
+Open-source (AGPL-3.0-only, see `LICENSE`) FastAPI backend for Titerlane Biologics: multi-omics LIMS, nf-core/Nextflow
 orchestration, append-only audit trail. Consumed by the proprietary `omicsflow-forge` frontend
 but must stay fully usable on its own through its public API.
 
@@ -18,7 +18,7 @@ uv run poe docs-serve          # MkDocs (needs --extra docs)
 uv sync --all-packages --extra dev   # also installs the Python SDK (sdk/)
 uv run poe sdk-test            # SDK tests (no network)
 uv run poe sdk-typecheck       # mypy --strict on the SDK
-uv run --package labchain-biologics-sdk labchain --help   # the SDK's CLI
+uv run --package titerlane-biologics-sdk titerlane --help   # the SDK's CLI
 ```
 
 `SECRET_KEY` (≥ 32 chars, not a placeholder) must be set, including for tests (see `tests/conftest.py`).
@@ -28,7 +28,7 @@ uv run --package labchain-biologics-sdk labchain --help   # the SDK's CLI
 `app/api` (thin routers + `deps.py`) · `app/core` (settings, DB, security) · `app/models`
 (SQLAlchemy 2.0) · `app/schemas` (Pydantic v2) · `app/services` (S3, Batch, audit, catalog) ·
 `alembic/versions` · `docs/` (MkDocs, one page per endpoint under `docs/api/`) ·
-`sdk/` (Python SDK `labchain-biologics-sdk`, uv workspace member).
+`sdk/` (Python SDK `titerlane-biologics-sdk`, uv workspace member).
 
 ### Python SDK (`sdk/`)
 
@@ -41,7 +41,7 @@ uv run --package labchain-biologics-sdk labchain --help   # the SDK's CLI
   same PR.
 - Never log or `repr()` tokens or signed storage URLs; signed URLs never receive the API
   `Authorization` header.
-- CLI (`labchain.cli`, Typer, `cli` extra only): thin layer over `Client`, no logic of its own.
+- CLI (`titerlane.cli`, Typer, `cli` extra only): thin layer over `Client`, no logic of its own.
   No `--token`/`--password` options (shell history); prompts and diagnostics go to stderr so
   stdout stays parseable; `--json` uses API field names; exit 1 on SDK errors, 2 on usage.
 - Unit tests use `httpx.MockTransport` (`sdk/tests/fakes.py`), no network.
@@ -65,7 +65,7 @@ uv run --package labchain-biologics-sdk labchain --help   # the SDK's CLI
 ### Tenancy and security
 
 - Tenant routes take the workspace through `deps.Workspace` / `deps.Membership`, which verify
-  that the user is a member (`workspace_memberships`). Never read `X-LabChain-Workspace` directly.
+  that the user is a member (`workspace_memberships`). Never read `X-Titerlane-Workspace` directly.
 - Roles are per workspace (`WorkspaceMembership.role`); `User` has no global role.
 - Every query on a tenant-owned table filters on `workspace`. A resource from another workspace,
   like a workspace the user is not a member of, returns 404, never its content.
@@ -106,7 +106,7 @@ uv run --package labchain-biologics-sdk labchain --help   # the SDK's CLI
 - Integration tests use the `fake_s3` fixture (in-memory S3) and patch `batch_service`; they
   never call AWS.
 - Integration tests (`tests/integration/`) run the real app against Postgres
-  (`TEST_DATABASE_URL`, default: docker compose DB `labchain_test`) and are skipped when it is
+  (`TEST_DATABASE_URL`, default: docker compose DB `titerlane_test`) and are skipped when it is
   unreachable. Tenant isolation and RBAC changes must be covered there.
 - Update `docs/api/<area>/<endpoint>.md` and `mkdocs.yml` nav when the API changes.
 

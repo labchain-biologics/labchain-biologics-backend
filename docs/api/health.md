@@ -29,7 +29,7 @@ curl -s http://localhost:8000/health
 ```json
 {
   "status": "ok",
-  "service": "LabChain Biologics",
+  "service": "Titerlane Biologics",
   "environment": "local"
 }
 ```

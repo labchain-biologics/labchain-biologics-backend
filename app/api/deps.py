@@ -21,7 +21,7 @@ from app.models.workspace import Workspace as WorkspaceModel
 from app.models.workspace import WorkspaceMembership
 from app.services import api_tokens
 
-WORKSPACE_HEADER = "X-LabChain-Workspace"
+WORKSPACE_HEADER = "X-Titerlane-Workspace"
 
 # "function" scope: the session commits when the endpoint returns, before the response is sent.
 # With FastAPI's default ("request") scope a yield dependency exits after the response, so a
@@ -114,7 +114,7 @@ async def require_interactive_session(
 
 
 async def get_membership(
-    x_labchain_workspace: Annotated[str | None, Header(alias=WORKSPACE_HEADER)],
+    x_titerlane_workspace: Annotated[str | None, Header(alias=WORKSPACE_HEADER)],
     current_user: Annotated[User, Depends(get_current_user)],
     db: DbSession,
 ) -> WorkspaceMembership:
@@ -124,7 +124,7 @@ async def get_membership(
     A workspace that does not exist, is inactive, or that the user is not a member of all
     yield the same 404, so the API never reveals which workspaces exist.
     """
-    slug = parse_workspace_header(x_labchain_workspace)
+    slug = parse_workspace_header(x_titerlane_workspace)
     result = await db.execute(
         select(WorkspaceMembership)
         .join(WorkspaceModel, WorkspaceMembership.workspace_id == WorkspaceModel.id)

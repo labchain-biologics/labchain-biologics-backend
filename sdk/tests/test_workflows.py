@@ -10,7 +10,7 @@ import httpx
 import pytest
 from fakes import NOW, WORKSPACE, FakeServer, body_of, ok, run_json
 
-from labchain import (
+from titerlane import (
     APIConnectionError,
     ChecksumMismatchError,
     Client,
@@ -19,8 +19,8 @@ from labchain import (
     RunFailedError,
     RunTimeoutError,
 )
-from labchain.models import FastqVerificationStatus, JobStatus
-from labchain.resources.runs import parse_sse
+from titerlane.models import FastqVerificationStatus, JobStatus
+from titerlane.resources.runs import parse_sse
 
 UPLOAD_URL = "http://storage.test/bucket/lab-west/fastq/reads.fastq.gz?X-Amz-Signature=sig"
 READS = b"@r1\nACGT\n+\nIIII\n" * 100
@@ -90,7 +90,7 @@ def test_upload_registers_puts_and_verifies(
     assert put.headers["Content-Length"] == str(len(READS))
     # The signed URL is the credential: the API token and workspace must not leak to storage.
     assert "Authorization" not in put.headers
-    assert "X-LabChain-Workspace" not in put.headers
+    assert "X-Titerlane-Workspace" not in put.headers
     assert [r.method for r in server.requests] == ["POST", "PUT", "POST", "GET"]
 
 

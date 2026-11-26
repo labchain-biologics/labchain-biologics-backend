@@ -9,8 +9,8 @@
 ## 1. Clone and install
 
 ```bash
-git clone https://github.com/labchain-biologics/labchain-biologics-backend.git
-cd labchain-biologics-backend
+git clone https://github.com/titerlane-biologics/titerlane-biologics-backend.git
+cd titerlane-biologics-backend
 uv sync --extra dev
 ```
 
@@ -30,8 +30,8 @@ docker compose --env-file .env up -d
 
 Starts:
 
-- **Postgres** on `localhost:5433` (`labchain` / `labchain` / `labchain`)
-- **LocalStack** S3 on `localhost:4566` (bucket `labchain-biologics` created on init)
+- **Postgres** on `localhost:5433` (`titerlane` / `titerlane` / `titerlane`)
+- **LocalStack** S3 on `localhost:4566` (bucket `titerlane-biologics` created on init)
 
 To stop the local infrastructure:
 

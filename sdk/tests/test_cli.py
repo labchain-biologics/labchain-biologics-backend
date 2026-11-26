@@ -1,4 +1,4 @@
-"""The ``labchain`` command, against the scripted fake server (no network)."""
+"""The ``titerlane`` command, against the scripted fake server (no network)."""
 
 from __future__ import annotations
 
@@ -16,15 +16,15 @@ from fakes import BASE_URL, TOKEN, WORKSPACE, FakeServer, body_of, ok, run_json,
 from test_workflows import READS, STREAM, _serve_fastq, _serve_result
 from typer.testing import CliRunner, Result
 
-from labchain import Client, __version__
-from labchain.cli import app as cli_module
-from labchain.cli import main
-from labchain.cli.app import app, infer_read_pair, parse_param
+from titerlane import Client, __version__
+from titerlane.cli import app as cli_module
+from titerlane.cli import main
+from titerlane.cli.app import app, infer_read_pair, parse_param
 
 
 @pytest.fixture
 def invoke(server: FakeServer, monkeypatch: pytest.MonkeyPatch) -> Iterator[Any]:
-    """Run ``labchain`` with LABCHAIN_* set and every Client wired to the fake server."""
+    """Run ``titerlane`` with TITERLANE_* set and every Client wired to the fake server."""
 
     class FakeClient(Client):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -33,7 +33,7 @@ def invoke(server: FakeServer, monkeypatch: pytest.MonkeyPatch) -> Iterator[Any]
             super().__init__(*args, **kwargs)
 
     monkeypatch.setattr(cli_module, "Client", FakeClient)
-    env = {"LABCHAIN_URL": BASE_URL, "LABCHAIN_TOKEN": TOKEN, "LABCHAIN_WORKSPACE": WORKSPACE}
+    env = {"TITERLANE_URL": BASE_URL, "TITERLANE_TOKEN": TOKEN, "TITERLANE_WORKSPACE": WORKSPACE}
     for name, value in env.items():
         monkeypatch.setenv(name, value)
     runner = CliRunner()
@@ -55,18 +55,18 @@ def test_token_is_not_a_command_line_option(invoke: Any) -> None:
     result = invoke("--help")
     assert result.exit_code == 0
     assert "--token" not in result.stdout
-    assert "LABCHAIN_URL" in result.stdout
+    assert "TITERLANE_URL" in result.stdout
 
 
 def test_missing_cli_extra_gets_a_clear_message(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setitem(sys.modules, "typer", None)  # makes `import typer` fail
-    monkeypatch.delitem(sys.modules, "labchain.cli.app")
+    monkeypatch.delitem(sys.modules, "titerlane.cli.app")
     with pytest.raises(SystemExit) as exc_info:
         main()
     assert exc_info.value.code == 1
-    assert 'pip install "labchain-biologics-sdk[cli]"' in capsys.readouterr().err
+    assert 'pip install "titerlane-biologics-sdk[cli]"' in capsys.readouterr().err
 
 
 def test_samples_list_json_uses_api_field_names(invoke: Any, server: FakeServer) -> None:
@@ -79,7 +79,7 @@ def test_samples_list_json_uses_api_field_names(invoke: Any, server: FakeServer)
     assert sample["sampleCode"] == "RNA-1"
     request = server.last("GET", "/api/v1/samples")
     assert request.headers["Authorization"] == f"Bearer {TOKEN}"
-    assert request.headers["X-LabChain-Workspace"] == WORKSPACE
+    assert request.headers["X-Titerlane-Workspace"] == WORKSPACE
     assert request.url.params["status"] == "registered"
     assert request.url.params["limit"] == "5"
 
@@ -98,7 +98,7 @@ def test_samples_list_table_and_all_pages(invoke: Any, server: FakeServer) -> No
 def test_workspace_option_overrides_environment(invoke: Any, server: FakeServer) -> None:
     server.on("GET", "/api/v1/runs", ok([]))
     assert invoke("-w", "lab-east", "runs", "list").exit_code == 0
-    assert server.last("GET", "/api/v1/runs").headers["X-LabChain-Workspace"] == "lab-east"
+    assert server.last("GET", "/api/v1/runs").headers["X-Titerlane-Workspace"] == "lab-east"
 
 
 def test_api_error_is_one_line_on_stderr_with_status_1(invoke: Any, server: FakeServer) -> None:
@@ -144,7 +144,7 @@ def test_token_create_prompts_for_the_password(invoke: Any, server: FakeServer) 
     result = invoke("token", "create", "ci", "--email", "lead@lab.test", input="s3cret\n")
 
     assert result.exit_code == 0, result.output
-    # The secret alone on stdout, so `export LABCHAIN_TOKEN=$(labchain token create ...)` works.
+    # The secret alone on stdout, so `export TITERLANE_TOKEN=$(titerlane token create ...)` works.
     assert result.stdout.strip() == "lcb_pat_abcd1234-the-secret"
     assert "Password" in result.stderr
     assert "s3cret" not in result.output

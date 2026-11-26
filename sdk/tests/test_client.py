@@ -6,7 +6,7 @@ import httpx
 import pytest
 from fakes import BASE_URL, TOKEN, WORKSPACE, FakeServer, body_of, ok, sample_json
 
-from labchain import (
+from titerlane import (
     APIConnectionError,
     AuthenticationError,
     Client,
@@ -24,14 +24,14 @@ def test_sends_auth_workspace_and_user_agent(client: Client, server: FakeServer)
 
     request = server.last("GET", "/api/v1/samples")
     assert request.headers["Authorization"] == f"Bearer {TOKEN}"
-    assert request.headers["X-LabChain-Workspace"] == WORKSPACE
-    assert request.headers["User-Agent"].startswith("labchain-biologics-sdk/")
+    assert request.headers["X-Titerlane-Workspace"] == WORKSPACE
+    assert request.headers["User-Agent"].startswith("titerlane-biologics-sdk/")
 
 
 def test_user_routes_do_not_send_workspace(client: Client, server: FakeServer) -> None:
     server.on("GET", "/api/v1/workspaces", ok([]))
     client.workspaces.list()
-    assert "X-LabChain-Workspace" not in server.last("GET", "/api/v1/workspaces").headers
+    assert "X-Titerlane-Workspace" not in server.last("GET", "/api/v1/workspaces").headers
 
 
 def test_missing_workspace_fails_before_any_request(server: FakeServer) -> None:
@@ -47,27 +47,27 @@ def test_with_workspace_switches_tenant(client: Client, server: FakeServer) -> N
     server.on("GET", "/api/v1/samples", ok([]))
     east = client.with_workspace("lab-east")
     east.samples.list()
-    assert server.last("GET", "/api/v1/samples").headers["X-LabChain-Workspace"] == "lab-east"
+    assert server.last("GET", "/api/v1/samples").headers["X-Titerlane-Workspace"] == "lab-east"
     assert client.workspace == WORKSPACE
 
 
 def test_reads_configuration_from_environment(
     server: FakeServer, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("LABCHAIN_URL", BASE_URL + "/")
-    monkeypatch.setenv("LABCHAIN_TOKEN", "lcb_pat_from_env")
-    monkeypatch.setenv("LABCHAIN_WORKSPACE", "lab-env")
+    monkeypatch.setenv("TITERLANE_URL", BASE_URL + "/")
+    monkeypatch.setenv("TITERLANE_TOKEN", "lcb_pat_from_env")
+    monkeypatch.setenv("TITERLANE_WORKSPACE", "lab-env")
     server.on("GET", "/api/v1/samples", ok([]))
     with Client(transport=httpx.MockTransport(server)) as client:
         client.samples.list()
     request = server.last("GET", "/api/v1/samples")
     assert str(request.url).startswith(BASE_URL + "/api/v1/samples")
     assert request.headers["Authorization"] == "Bearer lcb_pat_from_env"
-    assert request.headers["X-LabChain-Workspace"] == "lab-env"
+    assert request.headers["X-Titerlane-Workspace"] == "lab-env"
 
 
 def test_missing_base_url_is_a_configuration_error() -> None:
-    with pytest.raises(ConfigurationError, match="LABCHAIN_URL"):
+    with pytest.raises(ConfigurationError, match="TITERLANE_URL"):
         Client(token=TOKEN)
 
 

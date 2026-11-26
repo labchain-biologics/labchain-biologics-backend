@@ -22,7 +22,7 @@ class WorkspaceCreate(BaseModel):
         max_length=64,
         pattern=SLUG_PATTERN,
         description=(
-            "Lowercase letters, digits and dashes. Sent as the X-LabChain-Workspace header."
+            "Lowercase letters, digits and dashes. Sent as the X-Titerlane-Workspace header."
         ),
     )
     name: str = Field(min_length=1, max_length=255)

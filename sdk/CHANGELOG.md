@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `labchain-biologics-sdk`. The SDK follows
+All notable changes to `titerlane-biologics-sdk`. The SDK follows
 [Semantic Versioning](https://semver.org/); while it is 0.x, a minor version may change the
 interface. Releases are tagged `sdk-vX.Y.Z`.
 
@@ -10,7 +10,7 @@ interface. Releases are tagged `sdk-vX.Y.Z`.
 
 - `AsyncClient`: the same resources and methods as `Client`, awaited, on `httpx.AsyncClient`;
   listings and log streams are async iterators. Disk work runs in worker threads.
-- `labchain` command line, in the `cli` extra (`pip install "labchain-biologics-sdk[cli]"`):
+- `titerlane` command line, in the `cli` extra (`pip install "titerlane-biologics-sdk[cli]"`):
   tokens, workspaces, members, samples, FASTQ upload, pipelines, runs and results.
 
 ### Changed

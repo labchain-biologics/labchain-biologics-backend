@@ -1,9 +1,9 @@
-"""Python SDK for the LabChain Biologics API."""
+"""Python SDK for the Titerlane Biologics API."""
 
-from labchain._version import __version__
-from labchain.async_client import AsyncClient
-from labchain.client import Client
-from labchain.errors import (
+from titerlane._version import __version__
+from titerlane.async_client import AsyncClient
+from titerlane.client import Client
+from titerlane.errors import (
     APIConnectionError,
     APIError,
     AuthenticationError,
@@ -12,15 +12,15 @@ from labchain.errors import (
     ConfigurationError,
     ConflictError,
     ExecutionDisabledError,
-    LabChainError,
     NotFoundError,
     PermissionDeniedError,
     RunFailedError,
     RunTimeoutError,
     ServerError,
+    TiterlaneError,
     UnprocessableError,
 )
-from labchain.resources import RunEvent
+from titerlane.resources import RunEvent
 
 __all__ = [
     "APIConnectionError",
@@ -33,7 +33,7 @@ __all__ = [
     "ConfigurationError",
     "ConflictError",
     "ExecutionDisabledError",
-    "LabChainError",
+    "TiterlaneError",
     "NotFoundError",
     "PermissionDeniedError",
     "RunEvent",

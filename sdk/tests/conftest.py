@@ -8,7 +8,7 @@ import httpx
 import pytest
 from fakes import BASE_URL, TOKEN, WORKSPACE, FakeServer
 
-from labchain import Client
+from titerlane import Client
 
 
 @pytest.fixture
@@ -34,5 +34,5 @@ def no_sleep(monkeypatch: pytest.MonkeyPatch) -> list[float]:
 
 @pytest.fixture(autouse=True)
 def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in ("LABCHAIN_URL", "LABCHAIN_TOKEN", "LABCHAIN_WORKSPACE"):
+    for name in ("TITERLANE_URL", "TITERLANE_TOKEN", "TITERLANE_WORKSPACE"):
         monkeypatch.delenv(name, raising=False)

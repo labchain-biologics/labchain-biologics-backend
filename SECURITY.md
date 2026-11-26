@@ -1,6 +1,6 @@
 # Security policy
 
-LabChain Biologics handles regulated laboratory data (21 CFR Part 11 audit trail, sample and
+Titerlane Biologics handles regulated laboratory data (21 CFR Part 11 audit trail, sample and
 patient identifiers). We take vulnerability reports seriously and ask you to disclose them
 privately.
 
@@ -9,7 +9,7 @@ privately.
 **Do not open a public issue, discussion or pull request for a security problem.**
 
 Report it privately through GitHub: open the repository's
-[**Security** tab](https://github.com/labchain-biologics/labchain-biologics-backend/security)
+[**Security** tab](https://github.com/titerlane-biologics/titerlane-biologics-backend/security)
 and choose **Report a vulnerability**. Only the maintainers can see the report.
 
 Please include:
@@ -38,13 +38,13 @@ the Python SDK only.
 | Component | Supported |
 | --- | --- |
 | API server, `main` branch | yes |
-| `labchain-biologics-sdk`, latest release | yes |
+| `titerlane-biologics-sdk`, latest release | yes |
 | Older SDK releases | no |
 
 ## Scope
 
 In scope: this repository, i.e. the API server, its database migrations, the Python SDK and
-the `labchain` CLI. Of particular interest: authentication and personal access tokens,
+the `titerlane` CLI. Of particular interest: authentication and personal access tokens,
 workspace isolation (cross-tenant access), role checks, the append-only audit trail, signed
 storage URLs, and pipeline launch (command or parameter injection).
 

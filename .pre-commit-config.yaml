@@ -32,7 +32,7 @@ repos:
         args: [app]
       - id: mypy-sdk
         name: mypy (sdk)
-        entry: uv run --package labchain-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests
+        entry: uv run --package titerlane-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests
         language: system
         files: ^sdk/
         types: [python]

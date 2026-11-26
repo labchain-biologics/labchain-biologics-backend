@@ -129,7 +129,7 @@ class BatchService:
 
         overrides: ContainerOverridesTypeDef = {
             "command": command,
-            "environment": [{"name": "LABCHAIN_WORKSPACE", "value": workspace}],
+            "environment": [{"name": "TITERLANE_WORKSPACE", "value": workspace}],
         }
         response = client.submit_job(
             jobName=launch.run_name[:128],
@@ -137,7 +137,7 @@ class BatchService:
             jobDefinition=settings.aws_batch_job_definition,
             containerOverrides=overrides,
             tags={
-                "project": "labchain-biologics",
+                "project": "titerlane-biologics",
                 "workspace": workspace,
                 "pipeline": launch.pipeline_id,
             },

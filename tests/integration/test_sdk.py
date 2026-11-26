@@ -29,9 +29,9 @@ from app.models.workspace import Workspace
 from app.services.batch import BatchSubmissionResult, NextflowLaunch, batch_service
 from tests.integration.conftest import PASSWORD, FakeS3
 
-labchain = pytest.importorskip("labchain")
+titerlane = pytest.importorskip("titerlane")
 
-from labchain import (  # noqa: E402
+from titerlane import (  # noqa: E402
     AsyncClient,
     AuthenticationError,
     Client,
@@ -40,7 +40,7 @@ from labchain import (  # noqa: E402
     NotFoundError,
     PermissionDeniedError,
 )
-from labchain.models import FastqVerificationStatus, JobStatus  # noqa: E402
+from titerlane.models import FastqVerificationStatus, JobStatus  # noqa: E402
 
 MakeUser = Callable[..., Awaitable[User]]
 MakeWorkspace = Callable[..., Awaitable[Workspace]]

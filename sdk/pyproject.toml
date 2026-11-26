@@ -1,11 +1,11 @@
 [project]
-name = "labchain-biologics-sdk"
-# Single source: src/labchain/_version.py (the release workflow checks the tag against it).
+name = "titerlane-biologics-sdk"
+# Single source: src/titerlane/_version.py (the release workflow checks the tag against it).
 dynamic = ["version"]
-description = "Python SDK for the LabChain Biologics API (multi-omics LIMS and nf-core orchestration)"
+description = "Python SDK for the Titerlane Biologics API (multi-omics LIMS and nf-core orchestration)"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "LabChain Biologics" }]
+authors = [{ name = "Titerlane Biologics" }]
 # The SDK is Apache-2.0 so it can be imported by any code; the server stays AGPL-3.0-only.
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -23,17 +23,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# The `labchain` command: pip install "labchain-biologics-sdk[cli]".
+# The `titerlane` command: pip install "titerlane-biologics-sdk[cli]".
 cli = [
     "typer>=0.16.1",
 ]
 
 [project.scripts]
-labchain = "labchain.cli:main"
+titerlane = "titerlane.cli:main"
 
 [project.urls]
-Documentation = "https://labchain-biologics.github.io/labchain-biologics-backend/"
-Source = "https://github.com/labchain-biologics/labchain-biologics-backend/tree/main/sdk"
+Documentation = "https://titerlane-biologics.github.io/titerlane-biologics-backend/"
+Source = "https://github.com/titerlane-biologics/titerlane-biologics-backend/tree/main/sdk"
 
 [dependency-groups]
 dev = [
@@ -47,10 +47,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/labchain/_version.py"
+path = "src/titerlane/_version.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/labchain"]
+packages = ["src/titerlane"]
 
 [tool.ruff]
 extend = "../pyproject.toml"

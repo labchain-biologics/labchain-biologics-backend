@@ -21,5 +21,5 @@ scripts/        # LocalStack init
 - Pydantic schemas expose camelCase aliases via `populate_by_name=True`.
 - Audit trail rows are append-only (`audit_service.record`) — never mutate or delete.
 - RBAC via `RequireRole`: pipeline launch is `bioinformatics_lead` only.
-- Multi-tenant scoping via `X-LabChain-Workspace` (also allowed in CORS).
+- Multi-tenant scoping via `X-Titerlane-Workspace` (also allowed in CORS).
 - Endpoint modules stay thin; AWS/S3/Batch logic lives in `app/services/`.

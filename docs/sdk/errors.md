@@ -1,10 +1,10 @@
 # Errors
 
-Every exception raised by the SDK derives from `labchain.LabChainError`, so one `except`
+Every exception raised by the SDK derives from `titerlane.TiterlaneError`, so one `except`
 clause can catch them all.
 
 ```text
-LabChainError
+TiterlaneError
 ├── ConfigurationError        missing base URL or workspace, checked before any request
 ├── APIConnectionError        network failure, or object storage refused a transfer
 ├── APIError                  the API answered with an error status
@@ -32,7 +32,7 @@ LabChainError
 | `method`, `path` | The request, without query string or host |
 
 ```python
-from labchain import NotFoundError, PermissionDeniedError
+from titerlane import NotFoundError, PermissionDeniedError
 
 try:
     client.runs.launch("rnaseq", sample_ids=[sample_id])
@@ -48,7 +48,7 @@ Server-side validation errors (422) are rendered on one line in the message, as
 !!! note "Local validation comes first"
     Request models check types, enums, lengths and unknown fields before sending. A bad
     argument such as `samples.create(sample_code="", modality="genomics")` raises
-    `pydantic.ValidationError` locally, not a `LabChainError`, and no request is sent.
+    `pydantic.ValidationError` locally, not a `TiterlaneError`, and no request is sent.
 
 !!! note "404 hides other workspaces"
     A sample, run or file from a workspace you are not a member of answers `NotFoundError`,

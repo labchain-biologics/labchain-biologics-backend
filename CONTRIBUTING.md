@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in LabChain Biologics.
+Thank you for your interest in Titerlane Biologics.
 
 ## Code contributions are not open yet
 
@@ -15,7 +15,7 @@ This page will explain how to sign the CLA once it is available.
 ## What you can do today
 
 - **Report a bug** or **propose a feature** with the
-  [issue templates](https://github.com/labchain-biologics/labchain-biologics-backend/issues/new/choose).
+  [issue templates](https://github.com/titerlane-biologics/titerlane-biologics-backend/issues/new/choose).
 - **Report a security problem privately**: see [SECURITY.md](SECURITY.md). Never in a
   public issue.
 - **Improve the documentation** by reporting what is unclear or missing in an issue.

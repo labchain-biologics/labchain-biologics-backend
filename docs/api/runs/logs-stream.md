@@ -37,7 +37,7 @@ Events are not a JSON schema envelope; each SSE message has:
 ```bash
 curl -N 'http://localhost:8000/api/v1/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/logs/stream' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo' \
+  -H 'X-Titerlane-Workspace: demo' \
   -H 'Accept: text/event-stream'
 ```
 

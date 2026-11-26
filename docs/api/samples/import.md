@@ -50,7 +50,7 @@ Accepts camelCase or snake_case headers. Required: `sampleCode` / `sample_code`,
 ```bash
 curl -s -X POST 'http://localhost:8000/api/v1/samples/import' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo' \
+  -H 'X-Titerlane-Workspace: demo' \
   -F 'file=@samples.csv'
 ```
 

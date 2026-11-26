@@ -1,4 +1,4 @@
-"""Shared fixtures for LabChain Biologics unit tests."""
+"""Shared fixtures for Titerlane Biologics unit tests."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from app.models.user import User
 def sample_user() -> User:
     user = User(
         id=uuid.uuid4(),
-        email="lead@labchain.example",
+        email="lead@titerlane.example",
         full_name="Bio Lead",
         hashed_password="hashed",
         is_active=True,
@@ -33,7 +33,7 @@ def sample_user() -> User:
 def lab_technician() -> User:
     return User(
         id=uuid.uuid4(),
-        email="tech@labchain.example",
+        email="tech@titerlane.example",
         full_name="Lab Tech",
         hashed_password="hashed",
         is_active=True,

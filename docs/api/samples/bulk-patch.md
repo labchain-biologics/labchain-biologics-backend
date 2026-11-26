@@ -47,7 +47,7 @@ Updated samples in request order.
 ```bash
 curl -s -X PATCH 'http://localhost:8000/api/v1/samples/bulk' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo' \
+  -H 'X-Titerlane-Workspace: demo' \
   -H 'Content-Type: application/json' \
   -d '{
     "items": [

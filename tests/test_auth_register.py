@@ -20,7 +20,7 @@ async def test_register_bootstrap_disabled_by_default(
     monkeypatch.setattr(settings, "app_env", "development")
     with pytest.raises(HTTPException) as exc_info:
         await register_bootstrap_user(
-            payload=LoginRequest(email="new@labchain.example", **{"pass" + "word": "SecurePass1"}),
+            payload=LoginRequest(email="new@titerlane.example", **{"pass" + "word": "SecurePass1"}),
             db=mock_db,
         )
     assert exc_info.value.status_code == 403
@@ -37,7 +37,7 @@ async def test_register_bootstrap_grants_no_workspace_access(
     mock_db.execute = AsyncMock(return_value=execute_result)
 
     user = await register_bootstrap_user(
-        payload=LoginRequest(email="new@labchain.example", **{"pass" + "word": "SecurePass1"}),
+        payload=LoginRequest(email="new@titerlane.example", **{"pass" + "word": "SecurePass1"}),
         db=mock_db,
         full_name="New User",
     )
@@ -56,7 +56,7 @@ async def test_register_bootstrap_blocked_in_production_even_if_enabled(
     monkeypatch.setattr(settings, "app_env", "production")
     with pytest.raises(HTTPException) as exc_info:
         await register_bootstrap_user(
-            payload=LoginRequest(email="new@labchain.example", **{"pass" + "word": "SecurePass1"}),
+            payload=LoginRequest(email="new@titerlane.example", **{"pass" + "word": "SecurePass1"}),
             db=mock_db,
         )
     assert exc_info.value.status_code == 403
