@@ -39,6 +39,11 @@ LABEL org.opencontainers.image.title="Titerlane Biologics API" \
 RUN apt-get update \
     && apt-get upgrade -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
+    # No package installer at runtime: the app lives in /opt/venv. This also drops the
+    # base image's vendored (and unpatched) pip/setuptools dependencies.
+    && purelib="$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')" \
+    && rm -rf "${purelib}"/pip "${purelib}"/pip-* "${purelib}"/setuptools "${purelib}"/setuptools-* \
+              "${purelib}"/_distutils_hack "${purelib}"/distutils-precedence.pth /usr/local/bin/pip* \
     && groupadd --system --gid 10001 titerlane \
     && useradd --system --uid 10001 --gid titerlane --no-create-home --shell /usr/sbin/nologin titerlane
 
@@ -46,7 +51,6 @@ ENV PATH="/opt/venv/bin:${PATH}" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     APP_ENV=production \
-    SECRETS_DIR=/run/secrets \
     S3_ENDPOINT_URL=""
 
 WORKDIR /app

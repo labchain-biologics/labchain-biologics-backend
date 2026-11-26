@@ -10,7 +10,7 @@ See [`.env.example`](https://github.com/titerlane-biologics/titerlane-biologics-
 | `API_TOKEN_MAX_LIFETIME_DAYS` | Longest lifetime a personal access token may request (default 365) |
 | `DATABASE_URL` | Async Postgres URL (`postgresql+asyncpg://…`) |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
-| `SECRETS_DIR` | Directory of secret files, one per setting named after it (`secret_key`, `database_url`, ...). Environment variables take precedence. The image sets `/run/secrets` |
+| `SECRETS_DIR` | Directory of secret files, one per setting named after it (`secret_key`, `database_url`, ...). Environment variables take precedence. `deploy/compose.yaml` sets `/run/secrets` |
 | `S3_BUCKET` | Bucket for FASTQ uploads and run outputs |
 | `S3_ENDPOINT_URL` | LocalStack (`http://localhost:4566`), an S3-compatible endpoint, or empty for AWS S3 (the image default) |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Storage and Batch credentials. Unset: the standard AWS credential chain (IAM role, `AWS_PROFILE`, ...) |
