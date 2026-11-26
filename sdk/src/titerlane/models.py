@@ -295,6 +295,8 @@ class FastqRegistration(ApiModel):
     expected_md5: str | None = None
     verification_status: FastqVerificationStatus
     upload_url: str = Field(repr=False)
+    # Sent exactly with the PUT to upload_url: they are part of its signature.
+    upload_headers: dict[str, str]
     created_at: datetime
 
 

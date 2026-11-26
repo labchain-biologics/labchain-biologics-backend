@@ -55,10 +55,12 @@ Filters: `modality`, `assay`, `status`, `qc_status`.
 ### Bulk operations and CSV import
 
 ```python
-client.samples.bulk_update({
-    sample_a.id: {"qc_status": "pass"},
-    sample_b.id: {"qc_status": "fail", "qc_notes": "low yield"},
-})
+client.samples.bulk_update(
+    {
+        sample_a.id: {"qc_status": "pass"},
+        sample_b.id: {"qc_status": "fail", "qc_notes": "low yield"},
+    }
+)
 
 deleted = client.samples.bulk_delete([sample_c.id, sample_d.id])  # returns the count
 
@@ -77,7 +79,10 @@ audit trail.
 
 ```python
 seq_run = client.sequencing_runs.create(
-    run_name="NovaSeq-2026-11-25", instrument="NovaSeq X", flowcell_id="22FCXYZ", read_length="2x150"
+    run_name="NovaSeq-2026-11-25",
+    instrument="NovaSeq X",
+    flowcell_id="22FCXYZ",
+    read_length="2x150",
 )
 ```
 
@@ -105,16 +110,21 @@ print(fastq.verification_status)  # verified
   **before** anything is uploaded.
 - If the stored object does not match, `upload` raises `ChecksumMismatchError`. The FASTQ
   record stays in the workspace with status `mismatch`, so the failed transfer is traceable.
-- The upload URL is signed for `Content-Type: application/gzip`, so send gzipped FASTQ
-  (`.fastq.gz`).
+- `upload` sends the file with the headers the server signed (`registration.upload_headers`;
+  today `Content-Type: application/gzip`), so send gzipped FASTQ (`.fastq.gz`).
 
 For a custom transfer (another upload tool, an object already in the bucket), use the steps
 separately:
 
 ```python
-registration = client.fastq.register(filename="WGS-042_R2.fastq.gz", size_bytes=size,
-                                     expected_md5=md5, sample_id=sample.id, read_pair="R2")
-# PUT the file to registration.upload_url with Content-Type: application/gzip, then:
+registration = client.fastq.register(
+    filename="WGS-042_R2.fastq.gz",
+    size_bytes=size,
+    expected_md5=md5,
+    sample_id=sample.id,
+    read_pair="R2",
+)
+# PUT the file to registration.upload_url with exactly registration.upload_headers, then:
 verification = client.fastq.verify(registration.id)
 ```
 
@@ -141,7 +151,7 @@ FASTQ files.
 run = client.runs.launch(
     "rnaseq",
     sample_ids=[sample.id],
-    pipeline_version="3.14.0",          # default "latest"
+    pipeline_version="3.14.0",  # default "latest"
     parameters={"aligner": "star_salmon"},
 )
 print(run.status, run.execution_submitted)
@@ -204,8 +214,8 @@ for r in client.runs.iter(status="running"):
 ## Results
 
 ```python
-outputs = client.results.for_run(run.id)       # read from the run's output directory
-vcfs = client.results.list(file_type="vcf")    # every recorded output in the workspace
+outputs = client.results.for_run(run.id)  # read from the run's output directory
+vcfs = client.results.list(file_type="vcf")  # every recorded output in the workspace
 
 for output in outputs:
     path = client.results.download(output.id, "results/")

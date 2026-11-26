@@ -22,7 +22,6 @@ from titerlane.resources._base import Resource, build, file_md5, paginate, parse
 
 MAX_PAGE_SIZE = 1000
 # The server signs FASTQ upload URLs for this content type; the upload must send exactly it.
-FASTQ_UPLOAD_CONTENT_TYPE = "application/gzip"
 
 
 class SequencingRuns(Resource):
@@ -125,7 +124,9 @@ class Fastq(Resource):
             read_pair=read_pair,
         )
         with file_path.open("rb") as handle:
-            self._http.storage_put(registration.upload_url, handle, upload_headers(size))
+            self._http.storage_put(
+                registration.upload_url, handle, upload_headers(registration, size)
+            )
         verification = self.verify(registration.id)
         check_verification(file_path, local_md5, registration, verification)
         return self.get(registration.id)
@@ -142,8 +143,9 @@ def check_manifest(path: Path, local_md5: str, expected_md5: str | None) -> None
         )
 
 
-def upload_headers(size: int) -> dict[str, str]:
-    return {"Content-Type": FASTQ_UPLOAD_CONTENT_TYPE, "Content-Length": str(size)}
+def upload_headers(registration: FastqRegistration, size: int) -> dict[str, str]:
+    """The signed headers the server returned, plus the length of the body."""
+    return {**registration.upload_headers, "Content-Length": str(size)}
 
 
 def check_verification(
