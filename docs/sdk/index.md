@@ -86,11 +86,12 @@ with Client() as client:
 ```
 
 The [user guide](guide.md) walks through each step, and the [reference](reference.md) lists
-every method.
+every method. For asyncio code, [`AsyncClient`](async.md) offers the same methods, awaited.
 
 ## Pages
 
 - [Authentication](authentication.md): personal access tokens, password login, workspaces
 - [User guide](guide.md): samples, FASTQ, pipeline runs, logs, results
+- [Async client](async.md): `AsyncClient` for asyncio code and concurrent transfers
 - [Reference](reference.md): client, resources, models and enums
 - [Errors](errors.md): exception hierarchy and retries

@@ -15,6 +15,9 @@ client's workspace: **any** means any member (`lab_technician` or `bioinformatic
 | `client.base_url`, `client.workspace` | Current settings |
 | `client.close()` | Close connections (also on `with` exit) |
 
+`AsyncClient` has the same members with the same arguments, awaited; `iter` and
+`stream_logs` return async iterators. See [Async client](async.md).
+
 ## auth
 
 Not workspace-scoped. [API: /auth](../api/auth/me.md)

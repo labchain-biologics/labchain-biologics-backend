@@ -115,11 +115,7 @@ class Fastq(Resource):
         """
         file_path = Path(path)
         local_md5, size = file_md5(file_path)
-        if expected_md5 is not None and expected_md5.lower() != local_md5:
-            raise ChecksumMismatchError(
-                f"{file_path.name}: local MD5 {local_md5} differs from expected {expected_md5}; "
-                "nothing was uploaded"
-            )
+        check_manifest(file_path, local_md5, expected_md5)
         registration = self.register(
             filename=file_path.name,
             size_bytes=size,
@@ -129,15 +125,35 @@ class Fastq(Resource):
             read_pair=read_pair,
         )
         with file_path.open("rb") as handle:
-            self._http.storage_put(
-                registration.upload_url,
-                handle,
-                {"Content-Type": FASTQ_UPLOAD_CONTENT_TYPE, "Content-Length": str(size)},
-            )
+            self._http.storage_put(registration.upload_url, handle, upload_headers(size))
         verification = self.verify(registration.id)
-        if verification.verification_status != FastqVerificationStatus.verified:
-            raise ChecksumMismatchError(
-                f"{file_path.name}: stored object MD5 {verification.computed_md5} does not match "
-                f"{local_md5} (FASTQ {registration.id} marked {verification.verification_status})"
-            )
+        check_verification(file_path, local_md5, registration, verification)
         return self.get(registration.id)
+
+
+# --- Shared with the async client ------------------------------------------------------------
+
+
+def check_manifest(path: Path, local_md5: str, expected_md5: str | None) -> None:
+    if expected_md5 is not None and expected_md5.lower() != local_md5:
+        raise ChecksumMismatchError(
+            f"{path.name}: local MD5 {local_md5} differs from expected {expected_md5}; "
+            "nothing was uploaded"
+        )
+
+
+def upload_headers(size: int) -> dict[str, str]:
+    return {"Content-Type": FASTQ_UPLOAD_CONTENT_TYPE, "Content-Length": str(size)}
+
+
+def check_verification(
+    path: Path,
+    local_md5: str,
+    registration: FastqRegistration,
+    verification: FastqVerification,
+) -> None:
+    if verification.verification_status != FastqVerificationStatus.verified:
+        raise ChecksumMismatchError(
+            f"{path.name}: stored object MD5 {verification.computed_md5} does not match "
+            f"{local_md5} (FASTQ {registration.id} marked {verification.verification_status})"
+        )

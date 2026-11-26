@@ -43,10 +43,8 @@ class Results(Resource):
             ChecksumMismatchError: the downloaded bytes do not match the recorded MD5; nothing
                 is left at ``dest``.
         """
-        target = Path(dest)
         link = self.download_url(output_id)
-        if target.is_dir():
-            target = target / Path(link.filename).name
+        target = download_target(dest, link)
         digest = hashlib.md5(usedforsecurity=False)
         fd, tmp_name = tempfile.mkstemp(prefix=".labchain-", dir=target.parent)
         tmp_path = Path(tmp_name)
@@ -55,13 +53,25 @@ class Results(Resource):
                 for chunk in resp.iter_bytes():
                     digest.update(chunk)
                     handle.write(chunk)
-            if link.md5 is not None and digest.hexdigest() != link.md5.lower():
-                raise ChecksumMismatchError(
-                    f"{link.filename}: downloaded MD5 {digest.hexdigest()} does not match "
-                    f"recorded {link.md5}"
-                )
+            check_download(link, digest.hexdigest())
             tmp_path.replace(target)
         except BaseException:
             tmp_path.unlink(missing_ok=True)
             raise
         return target
+
+
+# --- Shared with the async client ------------------------------------------------------------
+
+
+def download_target(dest: str | Path, link: ResultDownload) -> Path:
+    """``dest`` itself, or the file's own name inside ``dest`` when it is a directory."""
+    target = Path(dest)
+    return target / Path(link.filename).name if target.is_dir() else target
+
+
+def check_download(link: ResultDownload, md5: str) -> None:
+    if link.md5 is not None and md5 != link.md5.lower():
+        raise ChecksumMismatchError(
+            f"{link.filename}: downloaded MD5 {md5} does not match recorded {link.md5}"
+        )

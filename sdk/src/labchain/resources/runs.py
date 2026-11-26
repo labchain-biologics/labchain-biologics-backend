@@ -85,13 +85,9 @@ class Runs(Resource):
         Check ``run.execution_submitted``: when it is false, pipeline execution is disabled on
         the server and the run is recorded but will never run.
         """
-        body = RunCreate(
-            pipeline_id=pipeline_id,
-            pipeline_version=pipeline_version,
-            sample_ids=[uuid.UUID(str(sample_id)) for sample_id in sample_ids],
-            sequencing_run_id=uuid.UUID(str(sequencing_run_id)) if sequencing_run_id else None,
-            parameters=parameters or {},
-        ).to_json()
+        body = run_create_body(
+            pipeline_id, sample_ids, pipeline_version, sequencing_run_id, parameters
+        )
         return parse(Run, self._http.request("POST", "/runs", json=body))
 
     def wait(
@@ -114,20 +110,9 @@ class Runs(Resource):
         deadline = None if timeout is None else time.monotonic() + timeout
         while True:
             run = self.get(run_id)
-            if not run.execution_submitted and not run.status.is_terminal:
-                raise ExecutionDisabledError(
-                    f"Run {run.id} was recorded but not submitted for execution: pipeline "
-                    "execution is disabled on this server, so it will stay pending"
-                )
-            if run.status.is_terminal:
-                if raise_on_failure and run.status != JobStatus.succeeded:
-                    message = run.progress.get("errorMessage")
-                    raise RunFailedError(str(run.id), run.status.value, message)
+            if finished(run, raise_on_failure=raise_on_failure):
                 return run
-            if deadline is not None and time.monotonic() + poll_interval > deadline:
-                raise RunTimeoutError(
-                    f"Run {run.id} still {run.status.value} after {timeout} seconds"
-                )
+            check_deadline(run, deadline, poll_interval, timeout)
             time.sleep(poll_interval)
 
     def logs(self, run_id: uuid.UUID | str, *, after: int = -1) -> builtins.list[RunLogLine]:
@@ -144,33 +129,91 @@ class Runs(Resource):
             yield from parse_sse(response.iter_lines())
 
 
+# --- Shared with the async client ------------------------------------------------------------
+
+
+def run_create_body(
+    pipeline_id: str,
+    sample_ids: Iterable[uuid.UUID | str],
+    pipeline_version: str,
+    sequencing_run_id: uuid.UUID | str | None,
+    parameters: dict[str, Any] | None,
+) -> dict[str, Any]:
+    return RunCreate(
+        pipeline_id=pipeline_id,
+        pipeline_version=pipeline_version,
+        sample_ids=[uuid.UUID(str(sample_id)) for sample_id in sample_ids],
+        sequencing_run_id=uuid.UUID(str(sequencing_run_id)) if sequencing_run_id else None,
+        parameters=parameters or {},
+    ).to_json()
+
+
+def finished(run: Run, *, raise_on_failure: bool) -> bool:
+    """Whether ``runs.wait`` can stop polling ``run``; raises when it never will succeed."""
+    if not run.execution_submitted and not run.status.is_terminal:
+        raise ExecutionDisabledError(
+            f"Run {run.id} was recorded but not submitted for execution: pipeline "
+            "execution is disabled on this server, so it will stay pending"
+        )
+    if not run.status.is_terminal:
+        return False
+    if raise_on_failure and run.status != JobStatus.succeeded:
+        message = run.progress.get("errorMessage")
+        raise RunFailedError(str(run.id), run.status.value, message)
+    return True
+
+
+def check_deadline(
+    run: Run, deadline: float | None, poll_interval: float, timeout: float | None
+) -> None:
+    if deadline is not None and time.monotonic() + poll_interval > deadline:
+        raise RunTimeoutError(f"Run {run.id} still {run.status.value} after {timeout} seconds")
+
+
 EventKind = Literal["log", "status", "end"]
 _EVENT_KINDS: dict[str, EventKind] = {"log": "log", "status": "status", "end": "end"}
 
 
-def parse_sse(lines: Iterable[str]) -> Iterator[RunEvent]:
-    """Decode a ``text/event-stream`` body into run events; stops after ``end``."""
-    kind: str | None = None
-    data: list[str] = []
-    event_id: str | None = None
-    for raw in lines:
+class SSEDecoder:
+    """Incremental ``text/event-stream`` decoder: feed it lines, get run events back."""
+
+    def __init__(self) -> None:
+        self.ended = False
+        self._kind: str | None = None
+        self._data: list[str] = []
+        self._id: str | None = None
+
+    def feed(self, raw: str) -> RunEvent | None:
+        """One line of the body; returns the event that a blank line completes, if known."""
         line = raw.rstrip("\r")
         if line == "":
-            known = _EVENT_KINDS.get(kind or "")
+            known = _EVENT_KINDS.get(self._kind or "")
+            event = None
             if known is not None:
-                index = int(event_id) if event_id is not None and event_id.isdigit() else None
-                yield RunEvent(kind=known, data="\n".join(data), index=index)
-                if known == "end":
-                    return
-            kind, data, event_id = None, [], None
-            continue
+                index = int(self._id) if self._id is not None and self._id.isdigit() else None
+                event = RunEvent(kind=known, data="\n".join(self._data), index=index)
+                self.ended = known == "end"
+            self._kind, self._data, self._id = None, [], None
+            return event
         if line.startswith(":"):
-            continue  # comment / keep-alive ping
+            return None  # comment / keep-alive ping
         field, _, value = line.partition(":")
         value = value.removeprefix(" ")
         if field == "event":
-            kind = value
+            self._kind = value
         elif field == "data":
-            data.append(value)
+            self._data.append(value)
         elif field == "id":
-            event_id = value
+            self._id = value
+        return None
+
+
+def parse_sse(lines: Iterable[str]) -> Iterator[RunEvent]:
+    """Decode a ``text/event-stream`` body into run events; stops after ``end``."""
+    decoder = SSEDecoder()
+    for line in lines:
+        event = decoder.feed(line)
+        if event is not None:
+            yield event
+            if decoder.ended:
+                return

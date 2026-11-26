@@ -9,6 +9,7 @@ installed (``uv sync --all-packages``).
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import threading
 import time
@@ -31,6 +32,7 @@ from tests.integration.conftest import PASSWORD, FakeS3
 labchain = pytest.importorskip("labchain")
 
 from labchain import (  # noqa: E402
+    AsyncClient,
     AuthenticationError,
     Client,
     ConflictError,
@@ -306,3 +308,97 @@ async def test_fastq_mismatch_is_reported(
         fake_s3.objects[registration.s3_key] = reads.read_bytes()
         verification = client.fastq.verify(registration.id)
         assert verification.verification_status is FastqVerificationStatus.mismatch
+
+
+class AsyncStorageRouter(httpx.AsyncBaseTransport):
+    """``StorageRouter`` for ``AsyncClient``: fake signed URLs in memory, the API over HTTP."""
+
+    def __init__(self, store: FakeS3) -> None:
+        self.store = store
+        self.network = httpx.AsyncHTTPTransport()
+        self.storage_requests: list[httpx.Request] = []
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        key = request.url.path.lstrip("/")
+        if request.url.host == "upload.test" and request.method == "PUT":
+            self.storage_requests.append(request)
+            self.store.objects[key] = await request.aread()
+            return httpx.Response(200)
+        if request.url.host == "download.test" and request.method == "GET":
+            self.storage_requests.append(request)
+            data = self.store.objects.get(key)
+            return httpx.Response(200, content=data) if data is not None else httpx.Response(404)
+        return await self.network.handle_async_request(request)
+
+    async def aclose(self) -> None:
+        await self.network.aclose()
+
+
+async def test_async_client_workflow(
+    base_url: str,
+    make_user: MakeUser,
+    make_workspace: MakeWorkspace,
+    fake_s3: FakeS3,
+    submitted: list[NextflowLaunch],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The same journey with AsyncClient, uploading both reads of a pair concurrently."""
+    monkeypatch.setattr(settings, "public_api_url", "https://api.test")
+    await make_user("lead@lab.io")
+    tech = await make_user("tech@lab.io")
+    router = AsyncStorageRouter(fake_s3)
+
+    session = await AsyncClient.login("lead@lab.io", PASSWORD, base_url=base_url, transport=router)
+    async with session:
+        await session.workspaces.create("lab-west", "Lab West")
+        await session.with_workspace("lab-west").members.add("tech@lab.io")
+        token = (await session.auth.tokens.create("async bot")).token
+
+    async with AsyncClient(base_url, token=token, workspace="lab-west", transport=router) as client:
+        sample = await client.samples.create(sample_code="ASY-1", modality="transcriptomics")
+        uploaded = await asyncio.gather(
+            *(
+                client.fastq.upload(
+                    _fastq(tmp_path, f"asy_{pair}.fastq.gz"), sample_id=sample.id, read_pair=pair
+                )
+                for pair in ("R1", "R2")
+            )
+        )
+        assert all(f.verification_status is FastqVerificationStatus.verified for f in uploaded)
+        assert all("Authorization" not in r.headers for r in router.storage_requests)
+        assert [s.sample_code async for s in client.samples.iter()] == ["ASY-1"]
+
+        run = await client.runs.launch("rnaseq", sample_ids=[sample.id])
+        assert run.execution_submitted
+        events_path = submitted[0].weblog_url.removeprefix("https://api.test")  # type: ignore[union-attr]  # set because public_api_url is
+        fake_s3.objects[f"lab-west/results/{run.id}/multiqc/multiqc_report.html"] = b"<html/>"
+        async with httpx.AsyncClient(base_url=base_url) as nextflow:
+            for event in (
+                {"event": "started", "utcTime": "2026-11-25T10:00:00Z"},
+                {"event": "completed", "metadata": {"workflow": {"success": True}}},
+            ):
+                assert (await nextflow.post(events_path, json=event)).status_code == 204
+
+        done = await client.runs.wait(run.id, timeout=30, poll_interval=0.1)
+        assert done.status is JobStatus.succeeded
+        events = [event async for event in client.runs.stream_logs(run.id)]
+        assert events[-1].kind == "end" and events[-1].data == "succeeded"
+        [report] = await client.results.for_run(run.id)
+        path = await client.results.download(report.id, tmp_path)
+        assert path.read_bytes() == b"<html/>"
+
+    # The technician's token: RBAC and isolation are enforced the same way.
+    async with AsyncClient(base_url, token="", workspace="lab-west", transport=router) as anon:
+        with pytest.raises(AuthenticationError):
+            await anon.auth.me()
+    tech_session = await AsyncClient.login(
+        "tech@lab.io", PASSWORD, base_url=base_url, workspace="lab-west", transport=router
+    )
+    async with tech_session:
+        assert tech.id == (await tech_session.auth.me()).id
+        with pytest.raises(PermissionDeniedError):
+            await tech_session.runs.launch("rnaseq")
+        with pytest.raises(NotFoundError):
+            await tech_session.with_workspace("lab-east").samples.list()
+    await router.aclose()

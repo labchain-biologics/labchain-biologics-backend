@@ -33,7 +33,9 @@ uv run poe sdk-typecheck       # mypy --strict on the SDK
 
 - Licensed **Apache-2.0** (`sdk/LICENSE`), unlike the AGPL server. Never import `app.*` from
   the SDK: it mirrors the public contract (`openapi.json`) with its own models.
-- Dependencies: `httpx` and `pydantic` only. Synchronous client; mypy --strict.
+- Dependencies: `httpx` and `pydantic` only. `Client` (sync) and `AsyncClient` (asyncio) share
+  `_http._TransportBase` and the request/check helpers of `resources/*.py`; `resources/aio.py`
+  mirrors every sync method (`sdk/tests/test_async.py` enforces parity). mypy --strict.
 - An API change that affects a route, field or enum used by the SDK updates `sdk/` in the
   same PR.
 - Never log or `repr()` tokens or signed storage URLs; signed URLs never receive the API

@@ -89,11 +89,7 @@ class Samples(Resource):
         self, patches: Mapping[uuid.UUID | str, SampleUpdate | Mapping[str, Any]]
     ) -> builtins.list[Sample]:
         """Update several samples in one request: ``{sample_id: {"qc_status": "pass"}}``."""
-        items = []
-        for sample_id, patch in patches.items():
-            model = patch if isinstance(patch, SampleUpdate) else SampleUpdate(**patch)
-            items.append({"id": str(sample_id), "patch": model.to_json(exclude_unset=True)})
-        data = self._http.request("PATCH", "/samples/bulk", json={"items": items})
+        data = self._http.request("PATCH", "/samples/bulk", json=bulk_patch_body(patches))
         return parse_list(Sample, data)
 
     def bulk_delete(self, sample_ids: Iterable[uuid.UUID | str]) -> int:
@@ -112,3 +108,16 @@ class Samples(Resource):
             files = {"file": (csv_path.name, handle, "text/csv")}
             data = self._http.request("POST", "/samples/import", files=files)
         return parse(SampleImportResult, data)
+
+
+# --- Shared with the async client ------------------------------------------------------------
+
+
+def bulk_patch_body(
+    patches: Mapping[uuid.UUID | str, SampleUpdate | Mapping[str, Any]],
+) -> dict[str, Any]:
+    items = []
+    for sample_id, patch in patches.items():
+        model = patch if isinstance(patch, SampleUpdate) else SampleUpdate(**patch)
+        items.append({"id": str(sample_id), "patch": model.to_json(exclude_unset=True)})
+    return {"items": items}

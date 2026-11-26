@@ -1,6 +1,7 @@
 """Python SDK for the LabChain Biologics API."""
 
 from labchain._version import __version__
+from labchain.async_client import AsyncClient
 from labchain.client import Client
 from labchain.errors import (
     APIConnectionError,
@@ -24,6 +25,7 @@ from labchain.resources import RunEvent
 __all__ = [
     "APIConnectionError",
     "APIError",
+    "AsyncClient",
     "AuthenticationError",
     "BadRequestError",
     "ChecksumMismatchError",
