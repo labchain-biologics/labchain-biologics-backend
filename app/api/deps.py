@@ -23,6 +23,12 @@ from app.services import api_tokens
 
 WORKSPACE_HEADER = "X-LabChain-Workspace"
 
+# "function" scope: the session commits when the endpoint returns, before the response is sent.
+# With FastAPI's default ("request") scope a yield dependency exits after the response, so a
+# client could act on a 2xx before its write is visible, and a commit failure (with its audit
+# record) would be lost after the client was told the write succeeded.
+DbSession = Annotated[AsyncSession, Depends(get_db, scope="function")]
+
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{settings.api_v1_prefix}/auth/login",
     auto_error=True,
@@ -55,7 +61,7 @@ class AuthContext:
 
 async def get_auth_context(
     token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: DbSession,
 ) -> AuthContext:
     """Accept a login JWT or a personal access token (``lcb_pat_…``) as bearer credential."""
     credentials_exception = HTTPException(
@@ -110,7 +116,7 @@ async def require_interactive_session(
 async def get_membership(
     x_labchain_workspace: Annotated[str | None, Header(alias=WORKSPACE_HEADER)],
     current_user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: DbSession,
 ) -> WorkspaceMembership:
     """
     Resolve the workspace header to a membership of the current user.
@@ -171,7 +177,6 @@ class RequireRole:
 require_lab_or_lead = RequireRole(Role.lab_technician, Role.bioinformatics_lead)
 require_bioinformatics_lead = RequireRole(Role.bioinformatics_lead)
 
-DbSession = Annotated[AsyncSession, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 InteractiveUser = Annotated[User, Depends(require_interactive_session)]
 Membership = Annotated[WorkspaceMembership, Depends(get_membership)]
