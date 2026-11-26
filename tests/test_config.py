@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
@@ -66,3 +68,30 @@ def test_secret_key_required_when_env_missing(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.delenv("SECRET_KEY", raising=False)
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+def test_aws_credentials_default_to_boto3_chain(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AWS_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("AWS_SECRET_ACCESS_KEY", raising=False)
+    settings = Settings(_env_file=None, secret_key="x" * 32)
+    assert settings.aws_access_key_id is None
+    assert settings.aws_secret_access_key is None
+
+
+def test_settings_read_from_secrets_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    secret = "s" * 40
+    url = "postgresql+asyncpg://u:p@db:5432/titerlane"
+    (tmp_path / "secret_key").write_text(secret + "\n")
+    (tmp_path / "database_url").write_text(url)
+    settings = Settings(_env_file=None, _secrets_dir=tmp_path)
+    assert settings.secret_key == secret
+    assert settings.database_url == url
+
+
+def test_environment_overrides_secrets_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SECRET_KEY", "e" * 40)
+    (tmp_path / "secret_key").write_text("f" * 40)
+    settings = Settings(_env_file=None, _secrets_dir=tmp_path)
+    assert settings.secret_key == "e" * 40

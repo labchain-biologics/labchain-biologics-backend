@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from typing import Annotated
 
@@ -43,8 +44,9 @@ class Settings(BaseSettings):
     google_client_id: str = ""
 
     aws_region: str = "us-east-1"
-    aws_access_key_id: str = "test"
-    aws_secret_access_key: str = "test"
+    # Unset: boto3's default credential chain (instance/task IAM role, AWS_PROFILE, ...).
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
     s3_bucket: str = "titerlane-biologics"
     s3_endpoint_url: str | None = "http://localhost:4566"
     s3_presign_expire_seconds: int = 3600
@@ -93,7 +95,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    # SECRETS_DIR (e.g. /run/secrets with Docker secrets) holds one file per setting, named
+    # after it (secret_key, database_url, ...). Environment variables take precedence.
+    return Settings(_secrets_dir=os.environ.get("SECRETS_DIR") or None)
 
 
 settings = get_settings()
