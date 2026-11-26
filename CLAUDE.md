@@ -7,7 +7,7 @@ but must stay fully usable on its own through its public API.
 ## Commands
 
 ```bash
-uv sync --extra dev            # install
+uv sync --extra dev            # install (uv.lock is committed: run `uv lock` after a dependency change)
 uv run poe start-local-run     # Postgres (5433) + LocalStack S3 (4566) via docker compose
 uv run poe migrate             # alembic upgrade head
 uv run poe start-dev           # API on :8000 (reload)

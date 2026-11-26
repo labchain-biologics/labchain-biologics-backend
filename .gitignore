@@ -36,8 +36,7 @@ Thumbs.db
 *.db
 *.sqlite3
 
-# uv / packaging
-uv.lock
+# uv / packaging: uv.lock is committed (reproducible, auditable installs)
 
 # Logs
 *.log

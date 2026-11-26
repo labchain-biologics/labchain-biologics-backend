@@ -109,7 +109,7 @@ jobs:
           python-version: "3.11"
 
       - name: Sync dependencies
-        run: uv sync --all-packages --extra dev
+        run: uv sync --locked --all-packages --extra dev
 
       - name: Run unit and integration tests
         env:
@@ -135,7 +135,7 @@ jobs:
           python-version: "3.11"
 
       - name: Sync dependencies
-        run: uv sync --all-packages --extra dev
+        run: uv sync --locked --all-packages --extra dev
 
       - name: Cache pre-commit environments
         uses: actions/cache@v4
@@ -209,7 +209,7 @@ jobs:
           python-version: "3.11"
 
       - name: Sync dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Import FastAPI application
         env:

@@ -49,8 +49,8 @@ jobs:
 
       - name: Test and type-check the SDK
         run: |
-          uv run --package labchain-biologics-sdk pytest sdk
-          uv run --package labchain-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests
+          uv run --locked --package labchain-biologics-sdk pytest sdk
+          uv run --locked --package labchain-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests
 
       - name: Build sdist and wheel
         run: uv build --package labchain-biologics-sdk --out-dir dist
