@@ -1,5 +1,5 @@
 """
-Typed models of the LabChain Biologics API.
+Typed models of the Titerlane Biologics API.
 
 They mirror the server's public OpenAPI contract (``openapi.json``), not its code: the SDK never
 imports the server. Python attributes are snake_case; the JSON sent and received is camelCase.

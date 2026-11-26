@@ -1,8 +1,8 @@
-site_name: LabChain Biologics Backend
-site_description: FastAPI async backend for LabChain Biologics — multi-omics LIMS and Nextflow orchestration
-site_url: https://labchain-biologics.github.io/labchain-biologics-backend/
-repo_url: https://github.com/labchain-biologics/labchain-biologics-backend
-repo_name: labchain-biologics/labchain-biologics-backend
+site_name: Titerlane Biologics Backend
+site_description: FastAPI async backend for Titerlane Biologics — multi-omics LIMS and Nextflow orchestration
+site_url: https://titerlane-biologics.github.io/titerlane-biologics-backend/
+repo_url: https://github.com/titerlane-biologics/titerlane-biologics-backend
+repo_name: titerlane-biologics/titerlane-biologics-backend
 edit_uri: edit/main/docs/
 
 docs_dir: docs
@@ -114,4 +114,4 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/labchain-biologics/labchain-biologics-backend
+      link: https://github.com/titerlane-biologics/titerlane-biologics-backend

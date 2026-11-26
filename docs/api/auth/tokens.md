@@ -4,7 +4,7 @@ Personal access tokens (PATs) are long-lived bearer credentials for scripts, not
 jobs and the Python SDK, where a 60-minute login JWT is impractical.
 
 A token acts **as its owner**: it carries no role of its own, and each request still needs
-`X-LabChain-Workspace` on tenant routes, where the owner's role in that workspace applies.
+`X-Titerlane-Workspace` on tenant routes, where the owner's role in that workspace applies.
 A deactivated user's tokens stop working.
 
 | | |

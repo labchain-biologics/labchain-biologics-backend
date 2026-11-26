@@ -27,7 +27,7 @@ def bearer(secret: str) -> dict[str, str]:
 
 
 def ws(headers: dict[str, str], slug: str) -> dict[str, str]:
-    return {**headers, "X-LabChain-Workspace": slug}
+    return {**headers, "X-Titerlane-Workspace": slug}
 
 
 async def _create(client: httpx.AsyncClient, auth: dict[str, str], name: str = "ci") -> str:

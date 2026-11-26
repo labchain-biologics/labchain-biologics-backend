@@ -44,7 +44,7 @@ async def _lead(
     user = await make_user(f"lead@{slug}.io")
     await make_workspace(slug, {user.id: Role.bioinformatics_lead})
     headers = await login(f"lead@{slug}.io")
-    return user, {**headers, "X-LabChain-Workspace": slug}
+    return user, {**headers, "X-Titerlane-Workspace": slug}
 
 
 async def test_sample_round_trips_all_lims_fields(

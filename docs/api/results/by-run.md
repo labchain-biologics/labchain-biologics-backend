@@ -27,7 +27,7 @@ See [GET /results](list.md).
 ```bash
 curl -s 'http://localhost:8000/api/v1/results/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo'
+  -H 'X-Titerlane-Workspace: demo'
 ```
 
 ```json
@@ -41,7 +41,7 @@ curl -s 'http://localhost:8000/api/v1/results/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbb
     "md5": null,
     "sampleId": null,
     "metadata": { "format": "vcf" },
-    "downloadUrl": "http://localhost:4566/labchain-biologics/demo/results/.../variants.vcf.gz?X-Amz-Algorithm=...",
+    "downloadUrl": "http://localhost:4566/titerlane-biologics/demo/results/.../variants.vcf.gz?X-Amz-Algorithm=...",
     "createdAt": "2026-08-10T12:00:00Z"
   },
   {
@@ -53,7 +53,7 @@ curl -s 'http://localhost:8000/api/v1/results/runs/bbbbbbbb-bbbb-bbbb-bbbb-bbbbb
     "md5": null,
     "sampleId": null,
     "metadata": { "format": "bam" },
-    "downloadUrl": "http://localhost:4566/labchain-biologics/demo/results/.../aligned.bam?X-Amz-Algorithm=...",
+    "downloadUrl": "http://localhost:4566/titerlane-biologics/demo/results/.../aligned.bam?X-Amz-Algorithm=...",
     "createdAt": "2026-08-10T12:00:00Z"
   }
 ]

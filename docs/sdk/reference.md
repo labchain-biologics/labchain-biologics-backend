@@ -104,7 +104,7 @@ Role: any. [API: /pipelines](../api/pipelines/list.md)
 | `runs.logs(run_id, *, after=-1)` | `list[RunLogLine]` | `GET /runs/{id}/logs` | any |
 | `runs.stream_logs(run_id)` | `Iterator[RunEvent]` | `GET /runs/{id}/logs/stream` | any |
 
-`RunEvent` (importable from `labchain`) has `kind` (`"log"`, `"status"` or `"end"`), `data`
+`RunEvent` (importable from `titerlane`) has `kind` (`"log"`, `"status"` or `"end"`), `data`
 (the log line, the new status, or the final status / `run-not-found`) and `index` (log
 position, for `logs(after=...)`).
 
@@ -121,7 +121,7 @@ Role: any. [API: /results](../api/results/list.md)
 
 ## Models
 
-Response models (`labchain.models`) are Pydantic models with snake_case attributes. They
+Response models (`titerlane.models`) are Pydantic models with snake_case attributes. They
 ignore unknown fields, so a newer server does not break an older SDK. Request models
 (`SampleCreate`, `SampleUpdate`, `SequencingRunCreate`, `FastqRegisterRequest`, ...) reject
 unknown fields, so a typo fails locally instead of being silently dropped.

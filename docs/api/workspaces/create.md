@@ -2,7 +2,7 @@
 
 A workspace is a tenant. Every sample, FASTQ file, run and result belongs to exactly one
 workspace, and users only see workspaces they are a member of. These two routes are **not**
-scoped by `X-LabChain-Workspace`.
+scoped by `X-Titerlane-Workspace`.
 
 ## GET /api/v1/workspaces
 
@@ -19,7 +19,7 @@ List the active workspaces the current user belongs to, with their role in each.
 | Field | Type | Description |
 | --- | --- | --- |
 | `id` | `uuid` | Workspace id |
-| `slug` | `string` | Value to send as `X-LabChain-Workspace` |
+| `slug` | `string` | Value to send as `X-Titerlane-Workspace` |
 | `name` | `string` | Display name |
 | `role` | `Role` | Role of the current user in this workspace |
 | `createdAt` | `datetime` | ISO-8601 |

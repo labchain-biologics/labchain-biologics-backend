@@ -1,6 +1,6 @@
 name: SDK release
 
-# Publishes labchain-biologics-sdk to PyPI when a tag `sdk-vX.Y.Z` is pushed.
+# Publishes titerlane-biologics-sdk to PyPI when a tag `sdk-vX.Y.Z` is pushed.
 # Trusted publishing (OIDC): no PyPI token is stored in GitHub. PyPI must list this
 # repository, this workflow file and the `pypi` environment as a trusted publisher.
 #
@@ -41,7 +41,7 @@ jobs:
       - name: Read the SDK version
         id: version
         run: |
-          version="$(sed -nE 's/^__version__ = "([^"]+)"$/\1/p' sdk/src/labchain/_version.py)"
+          version="$(sed -nE 's/^__version__ = "([^"]+)"$/\1/p' sdk/src/titerlane/_version.py)"
           echo "SDK version: ${version}"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
@@ -53,7 +53,7 @@ jobs:
           tag="${GITHUB_REF_NAME#sdk-v}"
           echo "tag=${tag} version=${version}"
           if [ "${tag}" != "${version}" ]; then
-            echo "::error::Tag ${GITHUB_REF_NAME} does not match sdk/src/labchain/_version.py (${version})"
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match sdk/src/titerlane/_version.py (${version})"
             exit 1
           fi
           heading="$(grep -E "^## ${version//./\.}( |$)" sdk/CHANGELOG.md || true)"
@@ -68,11 +68,11 @@ jobs:
 
       - name: Test and type-check the SDK
         run: |
-          uv run --locked --package labchain-biologics-sdk pytest sdk
-          uv run --locked --package labchain-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests
+          uv run --locked --package titerlane-biologics-sdk pytest sdk
+          uv run --locked --package titerlane-biologics-sdk mypy --config-file sdk/pyproject.toml sdk/src sdk/tests
 
       - name: Build sdist and wheel
-        run: uv build --package labchain-biologics-sdk --out-dir dist
+        run: uv build --package titerlane-biologics-sdk --out-dir dist
 
       - name: Check the distributions
         run: uvx twine check --strict dist/*
@@ -83,8 +83,8 @@ jobs:
         run: |
           uv venv --python 3.11 /tmp/smoke
           uv pip install --python /tmp/smoke "$(ls dist/*.whl)[cli]"
-          /tmp/smoke/bin/python -c "import labchain; print(labchain.__version__); assert labchain.__version__ == '${VERSION}'"
-          /tmp/smoke/bin/labchain version
+          /tmp/smoke/bin/python -c "import titerlane; print(titerlane.__version__); assert titerlane.__version__ == '${VERSION}'"
+          /tmp/smoke/bin/titerlane version
           # The licence of the SDK must ship with it.
           unzip -l dist/*.whl | grep -q "licenses/LICENSE"
 
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/labchain-biologics-sdk/
+      url: https://pypi.org/project/titerlane-biologics-sdk/
     permissions:
       id-token: write # trusted publishing
     steps:

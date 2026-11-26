@@ -80,7 +80,7 @@ async def create_workspace(
 
 @router.get("/members", response_model=list[MemberRead])
 async def list_members(db: DbSession, membership: Membership, _: LabOrLead) -> list[MemberRead]:
-    """Members of the workspace named by the ``X-LabChain-Workspace`` header."""
+    """Members of the workspace named by the ``X-Titerlane-Workspace`` header."""
     rows = await workspace_service.list_members(db, workspace_id=membership.workspace_id)
     return [_member_read(m, user) for m, user in rows]
 

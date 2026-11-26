@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from fakes import NOW, FakeServer, body_of, ok, sample_json
 
-from labchain import Client
-from labchain.models import QcStatus, Role, SampleUpdate
+from titerlane import Client
+from titerlane.models import QcStatus, Role, SampleUpdate
 
 
 def test_create_sample_sends_camel_case(client: Client, server: FakeServer) -> None:
@@ -28,7 +28,7 @@ def test_create_rejects_unknown_field_locally(client: Client, server: FakeServer
 
 
 def test_create_rejects_model_and_fields_together(client: Client) -> None:
-    from labchain.models import SampleCreate
+    from titerlane.models import SampleCreate
 
     with pytest.raises(TypeError):
         client.samples.create(SampleCreate(sample_code="S", modality="genomics"), notes="x")

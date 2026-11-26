@@ -1,6 +1,6 @@
-# LabChain Biologics Python SDK
+# Titerlane Biologics Python SDK
 
-Python client for the [LabChain Biologics](https://github.com/labchain-biologics/labchain-biologics-backend)
+Python client for the [Titerlane Biologics](https://github.com/titerlane-biologics/titerlane-biologics-backend)
 API: a multi-omics LIMS with nf-core / Nextflow orchestration and a 21 CFR Part 11 audit trail.
 Register samples, upload and verify FASTQ files, launch pipelines, follow their logs and
 download results from scripts, notebooks or CI.
@@ -15,12 +15,12 @@ include server code.
 The package is not on PyPI yet. Install it from a checkout of the repository:
 
 ```bash
-git clone https://github.com/labchain-biologics/labchain-biologics-backend.git
-pip install ./labchain-biologics-backend/sdk
+git clone https://github.com/titerlane-biologics/titerlane-biologics-backend.git
+pip install ./titerlane-biologics-backend/sdk
 ```
 
 Requires Python 3.11+. Full documentation: the "Python SDK" section of the
-[backend docs](https://labchain-biologics.github.io/labchain-biologics-backend/sdk/).
+[backend docs](https://titerlane-biologics.github.io/titerlane-biologics-backend/sdk/).
 
 ## Authenticate
 
@@ -28,7 +28,7 @@ Create a personal access token once, signed in with your password (tokens cannot
 tokens):
 
 ```python
-from labchain import Client
+from titerlane import Client
 
 with Client.login("you@lab.example", "your-password", base_url="https://lims.example") as c:
     created = c.auth.tokens.create("analysis notebook", expires_in_days=90)
@@ -38,9 +38,9 @@ with Client.login("you@lab.example", "your-password", base_url="https://lims.exa
 Then configure the client through the environment:
 
 ```bash
-export LABCHAIN_URL=https://lims.example
-export LABCHAIN_TOKEN=lcb_pat_...
-export LABCHAIN_WORKSPACE=helix-genomics   # workspace slug
+export TITERLANE_URL=https://lims.example
+export TITERLANE_TOKEN=lcb_pat_...
+export TITERLANE_WORKSPACE=helix-genomics   # workspace slug
 ```
 
 The token acts as you, with your role in each workspace. The server enforces permissions.
@@ -48,7 +48,7 @@ The token acts as you, with your role in each workspace. The server enforces per
 ## Example: from samples to results
 
 ```python
-from labchain import Client
+from titerlane import Client
 
 with Client() as client:
     sample = client.samples.create(
@@ -79,7 +79,7 @@ waiting forever.
 
 ```python
 import asyncio
-from labchain import AsyncClient
+from titerlane import AsyncClient
 
 
 async def main() -> None:
@@ -93,19 +93,19 @@ asyncio.run(main())
 
 ## Command line
 
-The `cli` extra adds a `labchain` command (`pip install "./sdk[cli]"` from a checkout):
+The `cli` extra adds a `titerlane` command (`pip install "./sdk[cli]"` from a checkout):
 
 ```bash
-export LABCHAIN_TOKEN=$(labchain token create "my laptop" --email you@lab.example)
-labchain samples list --qc-status pass
-labchain fastq upload --sample "$SAMPLE_ID" fastq/RNA-001_*.fastq.gz
-labchain runs launch rnaseq -s "$SAMPLE_ID" --follow
-labchain --json results list --run "$RUN_ID"
+export TITERLANE_TOKEN=$(titerlane token create "my laptop" --email you@lab.example)
+titerlane samples list --qc-status pass
+titerlane fastq upload --sample "$SAMPLE_ID" fastq/RNA-001_*.fastq.gz
+titerlane runs launch rnaseq -s "$SAMPLE_ID" --follow
+titerlane --json results list --run "$RUN_ID"
 ```
 
 ## Workspaces
 
-Workspace-scoped calls use `LABCHAIN_WORKSPACE` or the `workspace=` argument. Switch without
+Workspace-scoped calls use `TITERLANE_WORKSPACE` or the `workspace=` argument. Switch without
 reconnecting:
 
 ```python
@@ -115,7 +115,7 @@ east.samples.list(limit=10)
 
 ## Errors
 
-Every error derives from `labchain.LabChainError`. API errors carry `status_code` and the
+Every error derives from `titerlane.TiterlaneError`. API errors carry `status_code` and the
 server's `detail`:
 
 | Exception | When |

@@ -11,7 +11,7 @@ uv run poe test
 ```
 
 Integration tests in `tests/integration/` run the real app against PostgreSQL. Start it with
-`uv run poe start-local-run`; the suite creates and migrates a `labchain_test` database
+`uv run poe start-local-run`; the suite creates and migrates a `titerlane_test` database
 (override with `TEST_DATABASE_URL`). Without a reachable database they are skipped.
 
 ## Dependencies (`uv.lock`)
@@ -66,26 +66,26 @@ Output is written to `site/` (gitignored). On push to `main`, GitHub Actions bui
 
 ## Releasing the Python SDK
 
-`labchain-biologics-sdk` is published to PyPI by `.github/workflows/sdk-release.yml` when a
+`titerlane-biologics-sdk` is published to PyPI by `.github/workflows/sdk-release.yml` when a
 tag `sdk-vX.Y.Z` is pushed. It uses [trusted publishing](https://docs.pypi.org/trusted-publishers/):
 no PyPI token is stored in GitHub.
 
 ### One-time setup
 
-1. On PyPI, add a *pending trusted publisher* for the project `labchain-biologics-sdk`:
-   owner `labchain-biologics`, repository `labchain-biologics-backend`, workflow
+1. On PyPI, add a *pending trusted publisher* for the project `titerlane-biologics-sdk`:
+   owner `titerlane-biologics`, repository `titerlane-biologics-backend`, workflow
    `sdk-release.yml`, environment `pypi`.
 2. In the GitHub repository settings, create the environment `pypi`. Adding required
    reviewers makes every publication wait for a manual approval.
 
 ### Each release
 
-1. Set the version in `sdk/src/labchain/_version.py` (the only place it is defined).
+1. Set the version in `sdk/src/titerlane/_version.py` (the only place it is defined).
 2. In `sdk/CHANGELOG.md`, give that version's section its date instead of `(unreleased)`.
 3. Merge to `main`, then tag the merge commit and push the tag:
 
     ```bash
-    git tag -a sdk-v0.2.0 -m "labchain-biologics-sdk 0.2.0"
+    git tag -a sdk-v0.2.0 -m "titerlane-biologics-sdk 0.2.0"
     git push origin sdk-v0.2.0
     ```
 

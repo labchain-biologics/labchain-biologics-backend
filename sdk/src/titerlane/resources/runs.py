@@ -9,9 +9,9 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from labchain.errors import ExecutionDisabledError, RunFailedError, RunTimeoutError
-from labchain.models import JobStatus, Pipeline, Run, RunCreate, RunLogLine
-from labchain.resources._base import Resource, paginate, parse, parse_list
+from titerlane.errors import ExecutionDisabledError, RunFailedError, RunTimeoutError
+from titerlane.models import JobStatus, Pipeline, Run, RunCreate, RunLogLine
+from titerlane.resources._base import Resource, paginate, parse, parse_list
 
 MAX_PAGE_SIZE = 1000
 

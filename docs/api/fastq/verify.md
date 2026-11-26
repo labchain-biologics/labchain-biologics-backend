@@ -42,7 +42,7 @@ No body.
 ```bash
 curl -s -X POST 'http://localhost:8000/api/v1/fastq/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/verify' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo'
+  -H 'X-Titerlane-Workspace: demo'
 ```
 
 ```json

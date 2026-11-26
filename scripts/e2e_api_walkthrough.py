@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import TypeVar
 
 import httpx
-from labchain import Client, ExecutionDisabledError, LabChainError
+from titerlane import Client, ExecutionDisabledError, TiterlaneError
 
 DEFAULT_BASE_URL = "http://127.0.0.1:8000"
 DEFAULT_PIPELINE_ID = "rnaseq"
@@ -161,7 +161,7 @@ def run_walkthrough(args: argparse.Namespace) -> int:
             )
         except ExecutionDisabledError as exc:
             print(f"  ⚠ {exc}")
-        except LabChainError as exc:
+        except TiterlaneError as exc:
             print(f"  ⚠ {type(exc).__name__}: {exc}")
 
         outputs = step("13a. List results for run", lambda: client.results.for_run(run.id))
@@ -191,7 +191,7 @@ def run_walkthrough(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Chronological walkthrough of the LabChain Biologics API via the Python SDK",
+        description="Chronological walkthrough of the Titerlane Biologics API via the Python SDK",
     )
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="API base URL")
     parser.add_argument(

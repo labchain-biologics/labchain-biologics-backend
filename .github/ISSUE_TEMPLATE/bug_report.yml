@@ -14,7 +14,7 @@ body:
       options:
         - API server
         - Python SDK
-        - CLI (labchain)
+        - CLI (titerlane)
         - Documentation
     validations:
       required: true

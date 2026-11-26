@@ -45,7 +45,7 @@ record's file. A client-supplied `s3Key` outside the namespace is rejected (`422
 ```bash
 curl -s -X POST 'http://localhost:8000/api/v1/fastq/register' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo' \
+  -H 'X-Titerlane-Workspace: demo' \
   -H 'Content-Type: application/json' \
   -d '{
     "filename": "RNA-001_R1.fastq.gz",
@@ -64,7 +64,7 @@ curl -s -X POST 'http://localhost:8000/api/v1/fastq/register' \
   "sizeBytes": 104857600,
   "expectedMd5": "d41d8cd98f00b204e9800998ecf8427e",
   "verificationStatus": "pending",
-  "uploadUrl": "http://localhost:4566/labchain-biologics/demo/fastq/RNA-001_R1.fastq.gz?X-Amz-Algorithm=...",
+  "uploadUrl": "http://localhost:4566/titerlane-biologics/demo/fastq/RNA-001_R1.fastq.gz?X-Amz-Algorithm=...",
   "workspace": "demo",
   "createdAt": "2026-08-10T12:00:00Z"
 }

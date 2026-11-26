@@ -44,7 +44,7 @@ Same as [GET /auth/me](me.md), without `memberships`.
 curl -s -X POST 'http://localhost:8000/api/v1/auth/register?fullName=Alex%20Technician' \
   -H 'Content-Type: application/json' \
   -d '{
-    "email": "tech@labchain.example",
+    "email": "tech@titerlane.example",
     "password": "changeme123"
   }'
 ```
@@ -52,7 +52,7 @@ curl -s -X POST 'http://localhost:8000/api/v1/auth/register?fullName=Alex%20Tech
 ```json
 {
   "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
-  "email": "tech@labchain.example",
+  "email": "tech@titerlane.example",
   "fullName": "Alex Technician",
   "isActive": true,
   "createdAt": "2026-08-10T12:00:00Z"

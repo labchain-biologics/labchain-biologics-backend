@@ -29,7 +29,7 @@ See [GET /samples](list.md).
 ```bash
 curl -s -X PATCH 'http://localhost:8000/api/v1/samples/11111111-1111-1111-1111-111111111111' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo' \
+  -H 'X-Titerlane-Workspace: demo' \
   -H 'Content-Type: application/json' \
   -d '{
     "qcStatus": "warn",

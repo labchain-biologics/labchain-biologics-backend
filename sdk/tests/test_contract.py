@@ -18,7 +18,7 @@ import httpx
 import pytest
 from pydantic import BaseModel
 
-from labchain import Client, models
+from titerlane import Client, models
 
 OPENAPI = Path(__file__).resolve().parents[2] / "openapi.json"
 

@@ -87,7 +87,7 @@ See [GET /runs/{id}](get.md). Fields set at launch: `status` (`submitted` or `pe
 ```bash
 curl -s -X POST 'http://localhost:8000/api/v1/runs' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: helix-genomics' \
+  -H 'X-Titerlane-Workspace: helix-genomics' \
   -H 'Content-Type: application/json' \
   -d '{
     "pipelineId": "sarek",

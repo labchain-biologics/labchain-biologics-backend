@@ -34,7 +34,7 @@ No body.
 ```bash
 curl -s 'http://localhost:8000/api/v1/results/dddddddd-dddd-dddd-dddd-dddddddddddd/download' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo'
+  -H 'X-Titerlane-Workspace: demo'
 ```
 
 ```json
@@ -42,7 +42,7 @@ curl -s 'http://localhost:8000/api/v1/results/dddddddd-dddd-dddd-dddd-dddddddddd
   "id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
   "fileType": "vcf",
   "filename": "RNA-001-rnaseq.vcf.gz",
-  "downloadUrl": "http://localhost:4566/labchain-biologics/demo/results/.../variants.vcf.gz?X-Amz-Algorithm=...",
+  "downloadUrl": "http://localhost:4566/titerlane-biologics/demo/results/.../variants.vcf.gz?X-Amz-Algorithm=...",
   "expiresIn": 3600,
   "md5": null
 }

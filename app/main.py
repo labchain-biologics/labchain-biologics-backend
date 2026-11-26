@@ -1,4 +1,4 @@
-"""LabChain Biologics FastAPI application entrypoint."""
+"""Titerlane Biologics FastAPI application entrypoint."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ logging.basicConfig(
     level=logging.DEBUG if settings.debug else logging.INFO,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
-logger = logging.getLogger("labchain")
+logger = logging.getLogger("titerlane")
 
 
 async def _prepare_local_bucket() -> None:
@@ -75,7 +75,7 @@ app = FastAPI(
     version="0.1.0",
     description=(
         "Regulated multi-omics LIMS and Nextflow orchestration API "
-        "for LabChain Biologics (21 CFR Part 11 audit trail)."
+        "for Titerlane Biologics (21 CFR Part 11 audit trail)."
     ),
     lifespan=lifespan,
     generate_unique_id_function=operation_id,
@@ -90,7 +90,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-LabChain-Workspace"],
+    expose_headers=["X-Titerlane-Workspace"],
 )
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)

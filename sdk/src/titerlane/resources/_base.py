@@ -9,8 +9,8 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
-from labchain._http import Transport
-from labchain.models import RequestModel
+from titerlane._http import Transport
+from titerlane.models import RequestModel
 
 T = TypeVar("T")
 M = TypeVar("M", bound=BaseModel)

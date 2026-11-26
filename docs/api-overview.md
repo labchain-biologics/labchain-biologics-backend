@@ -9,7 +9,7 @@ Most routes under `/api/v1` expect:
 
 ```http
 Authorization: Bearer <access_token>
-X-LabChain-Workspace: <workspace-slug>
+X-Titerlane-Workspace: <workspace-slug>
 ```
 
 The bearer credential is either a login JWT (`POST /auth/login`, short-lived) or a

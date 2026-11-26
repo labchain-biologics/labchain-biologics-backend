@@ -8,8 +8,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-from labchain.errors import ChecksumMismatchError
-from labchain.models import (
+from titerlane.errors import ChecksumMismatchError
+from titerlane.models import (
     FastqFile,
     FastqRegisterRequest,
     FastqRegistration,
@@ -18,7 +18,7 @@ from labchain.models import (
     SequencingRun,
     SequencingRunCreate,
 )
-from labchain.resources._base import Resource, build, file_md5, paginate, parse, parse_list
+from titerlane.resources._base import Resource, build, file_md5, paginate, parse, parse_list
 
 MAX_PAGE_SIZE = 1000
 # The server signs FASTQ upload URLs for this content type; the upload must send exactly it.

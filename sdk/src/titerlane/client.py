@@ -1,4 +1,4 @@
-"""The asynchronous LabChain Biologics API client."""
+"""The Titerlane Biologics API client."""
 
 from __future__ import annotations
 
@@ -8,37 +8,42 @@ from typing import Any
 
 import httpx
 
-from labchain._http import AsyncTransport
-from labchain.client import ENV_TOKEN, ENV_URL, ENV_WORKSPACE
-from labchain.errors import ConfigurationError
-from labchain.models import Token
-from labchain.resources.aio import (
-    AsyncAuth,
-    AsyncFastq,
-    AsyncMembers,
-    AsyncPipelines,
-    AsyncResults,
-    AsyncRuns,
-    AsyncSamples,
-    AsyncSequencingRuns,
-    AsyncWorkspaces,
+from titerlane._http import Transport
+from titerlane.errors import ConfigurationError
+from titerlane.models import Token
+from titerlane.resources import (
+    Auth,
+    Fastq,
+    Members,
+    Pipelines,
+    Results,
+    Runs,
+    Samples,
+    SequencingRuns,
+    Workspaces,
 )
 
+ENV_URL = "TITERLANE_URL"
+ENV_TOKEN = "TITERLANE_TOKEN"  # noqa: S105 - name of an environment variable, not a secret
+ENV_WORKSPACE = "TITERLANE_WORKSPACE"
 
-class AsyncClient:
+
+class Client:
     """
-    Asynchronous client for one LabChain Biologics server, for asyncio applications (web
-    services, notebooks with a running loop, concurrent transfers).
+    Synchronous client for one Titerlane Biologics server.
 
-    It has the same resources and methods as :class:`labchain.Client`, awaited; listings and
-    log streams are async iterators. Configuration is the same (arguments, else
-    ``LABCHAIN_URL``, ``LABCHAIN_TOKEN``, ``LABCHAIN_WORKSPACE``)::
+    Arguments left out are read from the environment: ``TITERLANE_URL``, ``TITERLANE_TOKEN``
+    (a personal access token, ``lcb_pat_...``) and ``TITERLANE_WORKSPACE`` (the workspace slug
+    used by workspace-scoped calls)::
 
-        from labchain import AsyncClient
+        from titerlane import Client
 
-        async with AsyncClient() as client:
-            async for sample in client.samples.iter(status="fastq_received"):
+        with Client() as client:
+            for sample in client.samples.iter(status="fastq_received"):
                 print(sample.sample_code)
+
+    Every call acts as the token's owner, with their role in the selected workspace; the
+    server enforces permissions.
     """
 
     def __init__(
@@ -49,13 +54,13 @@ class AsyncClient:
         workspace: str | None = None,
         timeout: float = 30.0,
         max_retries: int = 2,
-        transport: httpx.AsyncBaseTransport | None = None,
-        _http: AsyncTransport | None = None,
+        transport: httpx.BaseTransport | None = None,
+        _http: Transport | None = None,
     ) -> None:
         if _http is not None:
             self._http = _http
         else:
-            self._http = AsyncTransport(
+            self._http = Transport(
                 base_url or os.environ.get(ENV_URL, ""),
                 token if token is not None else os.environ.get(ENV_TOKEN),
                 workspace if workspace is not None else os.environ.get(ENV_WORKSPACE),
@@ -63,18 +68,18 @@ class AsyncClient:
                 max_retries=max_retries,
                 transport=transport,
             )
-        self.auth = AsyncAuth(self._http)
-        self.workspaces = AsyncWorkspaces(self._http)
-        self.members = AsyncMembers(self._http)
-        self.samples = AsyncSamples(self._http)
-        self.sequencing_runs = AsyncSequencingRuns(self._http)
-        self.fastq = AsyncFastq(self._http)
-        self.pipelines = AsyncPipelines(self._http)
-        self.runs = AsyncRuns(self._http)
-        self.results = AsyncResults(self._http)
+        self.auth = Auth(self._http)
+        self.workspaces = Workspaces(self._http)
+        self.members = Members(self._http)
+        self.samples = Samples(self._http)
+        self.sequencing_runs = SequencingRuns(self._http)
+        self.fastq = Fastq(self._http)
+        self.pipelines = Pipelines(self._http)
+        self.runs = Runs(self._http)
+        self.results = Results(self._http)
 
     @classmethod
-    async def login(
+    def login(
         cls,
         email: str,
         password: str,
@@ -83,8 +88,8 @@ class AsyncClient:
         workspace: str | None = None,
         timeout: float = 30.0,
         max_retries: int = 2,
-        transport: httpx.AsyncBaseTransport | None = None,
-    ) -> AsyncClient:
+        transport: httpx.BaseTransport | None = None,
+    ) -> Client:
         """
         Sign in with email and password. The session expires after the server's JWT lifetime
         (one hour by default): prefer a personal access token for scripts and jobs.
@@ -98,11 +103,11 @@ class AsyncClient:
             transport=transport,
         )
         try:
-            data = await anonymous._http.request(
+            data = anonymous._http.request(
                 "POST", "/auth/login", tenant=False, json={"email": email, "password": password}
             )
         except BaseException:
-            await anonymous.close()
+            anonymous.close()
             raise
         anonymous._http.token = Token.model_validate(data).access_token
         return anonymous
@@ -115,33 +120,31 @@ class AsyncClient:
     def workspace(self) -> str | None:
         return self._http.workspace
 
-    def with_workspace(self, workspace: str) -> AsyncClient:
+    def with_workspace(self, workspace: str) -> Client:
         """A client for another workspace, sharing this one's connection and credentials."""
         if not workspace:
             raise ConfigurationError("workspace must not be empty")
-        return AsyncClient(_http=self._http.bound_to(workspace))
+        return Client(_http=self._http.bound_to(workspace))
 
-    async def health(self) -> dict[str, Any]:
+    def health(self) -> dict[str, Any]:
         """Server liveness. Needs no credentials."""
-        data: dict[str, Any] = await self._http.request(
-            "GET", "/health", tenant=False, versioned=False
-        )
+        data: dict[str, Any] = self._http.request("GET", "/health", tenant=False, versioned=False)
         return data
 
-    async def close(self) -> None:
-        await self._http.close()
+    def close(self) -> None:
+        self._http.close()
 
-    async def __aenter__(self) -> AsyncClient:
+    def __enter__(self) -> Client:
         return self
 
-    async def __aexit__(
+    def __exit__(
         self,
         exc_type: type[BaseException] | None,
         exc: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        await self.close()
+        self.close()
 
     def __repr__(self) -> str:
         # Never the token.
-        return f"AsyncClient(base_url={self.base_url!r}, workspace={self.workspace!r})"
+        return f"Client(base_url={self.base_url!r}, workspace={self.workspace!r})"

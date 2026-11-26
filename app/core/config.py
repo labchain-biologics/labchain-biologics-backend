@@ -17,7 +17,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "LabChain Biologics API"
+    app_name: str = "Titerlane Biologics API"
     app_env: str = "development"
     debug: bool = False
     secret_key: str = Field(
@@ -38,21 +38,21 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
     )
 
-    database_url: str = "postgresql+asyncpg://labchain:labchain@localhost:5432/labchain"
+    database_url: str = "postgresql+asyncpg://titerlane:titerlane@localhost:5432/titerlane"
 
     google_client_id: str = ""
 
     aws_region: str = "us-east-1"
     aws_access_key_id: str = "test"
     aws_secret_access_key: str = "test"
-    s3_bucket: str = "labchain-biologics"
+    s3_bucket: str = "titerlane-biologics"
     s3_endpoint_url: str | None = "http://localhost:4566"
     s3_presign_expire_seconds: int = 3600
 
-    aws_batch_job_queue: str = "labchain-nf-queue"
-    aws_batch_job_definition: str = "labchain-nf-job"
+    aws_batch_job_queue: str = "titerlane-nf-queue"
+    aws_batch_job_definition: str = "titerlane-nf-job"
     aws_batch_enabled: bool = False
-    nextflow_work_dir: str = "s3://labchain-biologics/nextflow-work"
+    nextflow_work_dir: str = "s3://titerlane-biologics/nextflow-work"
     # Passed to `nextflow run -profile`. With AWS Batch this is usually a profile defined in
     # the config at `nextflow_config_uri` (e.g. "awsbatch").
     nextflow_profile: str = "docker"

@@ -37,7 +37,7 @@ async def _setup(
     """A lead in workspace lab-west and one sample with a verified R1/R2 pair."""
     lead = await make_user("lead@lab.io")
     await make_workspace("lab-west", {lead.id: Role.bioinformatics_lead})
-    headers = {**(await login("lead@lab.io")), "X-LabChain-Workspace": "lab-west"}
+    headers = {**(await login("lead@lab.io")), "X-Titerlane-Workspace": "lab-west"}
     sample = (
         await client.post(
             "/api/v1/samples",
@@ -308,7 +308,7 @@ async def test_launch_requires_verified_reads(
 ) -> None:
     lead = await make_user("lead@lab.io")
     await make_workspace("lab-west", {lead.id: Role.bioinformatics_lead})
-    headers = {**(await login("lead@lab.io")), "X-LabChain-Workspace": "lab-west"}
+    headers = {**(await login("lead@lab.io")), "X-Titerlane-Workspace": "lab-west"}
     sample = (
         await client.post(
             "/api/v1/samples",
@@ -412,7 +412,7 @@ async def _lead_headers(
 ) -> Headers:
     lead = await make_user("lead@lab.io")
     await make_workspace("lab-west", {lead.id: Role.bioinformatics_lead})
-    return {**(await login("lead@lab.io")), "X-LabChain-Workspace": "lab-west"}
+    return {**(await login("lead@lab.io")), "X-Titerlane-Workspace": "lab-west"}
 
 
 async def test_launch_refuses_inputs_replaced_after_verification(

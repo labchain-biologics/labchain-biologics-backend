@@ -8,7 +8,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
-from labchain.models import (
+from titerlane.models import (
     OmicsModality,
     QcStatus,
     Sample,
@@ -18,7 +18,7 @@ from labchain.models import (
     SampleStatus,
     SampleUpdate,
 )
-from labchain.resources._base import Resource, build, paginate, parse, parse_list
+from titerlane.resources._base import Resource, build, paginate, parse, parse_list
 
 MAX_PAGE_SIZE = 1000
 

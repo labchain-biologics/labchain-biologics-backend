@@ -1,6 +1,6 @@
 # Workspace members
 
-Manage the members of the workspace named by the `X-LabChain-Workspace` header. Every change
+Manage the members of the workspace named by the `X-Titerlane-Workspace` header. Every change
 is written to the audit trail with before/after state.
 
 | Method | Path | Role | Success |
@@ -14,7 +14,7 @@ All routes require:
 
 ```http
 Authorization: Bearer <access_token>
-X-LabChain-Workspace: <workspace-slug>
+X-Titerlane-Workspace: <workspace-slug>
 ```
 
 A workspace always keeps at least one `bioinformatics_lead`: demoting or removing the last
@@ -61,7 +61,7 @@ actions stay in the audit trail.
 ```bash
 curl -s -X POST 'http://localhost:8000/api/v1/members' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: helix-genomics' \
+  -H 'X-Titerlane-Workspace: helix-genomics' \
   -H 'Content-Type: application/json' \
-  -d '{"email": "tech@labchain.example", "role": "lab_technician"}'
+  -d '{"email": "tech@titerlane.example", "role": "lab_technician"}'
 ```

@@ -20,7 +20,7 @@ Login = Callable[[str], Awaitable[dict[str, str]]]
 
 
 def ws(headers: dict[str, str], slug: str) -> dict[str, str]:
-    return {**headers, "X-LabChain-Workspace": slug}
+    return {**headers, "X-Titerlane-Workspace": slug}
 
 
 async def test_login_does_not_need_workspace_and_me_lists_memberships(

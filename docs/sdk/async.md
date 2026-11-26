@@ -17,7 +17,7 @@ The differences:
 | `client.close()` | `await client.close()` |
 | `transport=httpx.BaseTransport` | `transport=httpx.AsyncBaseTransport` |
 
-Configuration (`LABCHAIN_URL`, `LABCHAIN_TOKEN`, `LABCHAIN_WORKSPACE`), errors, retries and
+Configuration (`TITERLANE_URL`, `TITERLANE_TOKEN`, `TITERLANE_WORKSPACE`), errors, retries and
 secrets handling are the same as for `Client`.
 
 ## Example: upload a whole run concurrently
@@ -26,7 +26,7 @@ secrets handling are the same as for `Client`.
 import asyncio
 from pathlib import Path
 
-from labchain import AsyncClient
+from titerlane import AsyncClient
 
 
 async def main() -> None:
@@ -61,7 +61,7 @@ worker thread (`asyncio.to_thread`).
 Notebooks already run an event loop, so use top-level `await` instead of `asyncio.run`:
 
 ```python
-from labchain import AsyncClient
+from titerlane import AsyncClient
 
 client = AsyncClient()
 samples = [s async for s in client.samples.iter(qc_status="pass")]

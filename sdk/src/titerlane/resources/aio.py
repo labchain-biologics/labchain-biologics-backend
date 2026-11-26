@@ -1,5 +1,5 @@
 """
-Asynchronous API resources, exposed as attributes of :class:`labchain.AsyncClient`.
+Asynchronous API resources, exposed as attributes of :class:`titerlane.AsyncClient`.
 
 Each class mirrors its synchronous counterpart method for method (same names, arguments and
 return types, awaited); ``sdk/tests/test_async.py`` enforces it. Request bodies and checks are
@@ -20,8 +20,8 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Mappin
 from pathlib import Path
 from typing import Any, TypeVar
 
-from labchain._http import AsyncTransport
-from labchain.models import (
+from titerlane._http import AsyncTransport
+from titerlane.models import (
     ApiToken,
     ApiTokenCreate,
     ApiTokenCreated,
@@ -54,9 +54,9 @@ from labchain.models import (
     Workspace,
     WorkspaceCreate,
 )
-from labchain.resources._base import CHUNK_SIZE, build, file_md5, parse, parse_list
-from labchain.resources.results import check_download, download_target
-from labchain.resources.runs import (
+from titerlane.resources._base import CHUNK_SIZE, build, file_md5, parse, parse_list
+from titerlane.resources.results import check_download, download_target
+from titerlane.resources.runs import (
     MAX_PAGE_SIZE,
     RunEvent,
     SSEDecoder,
@@ -64,8 +64,8 @@ from labchain.resources.runs import (
     finished,
     run_create_body,
 )
-from labchain.resources.samples import bulk_patch_body
-from labchain.resources.sequencing import check_manifest, check_verification, upload_headers
+from titerlane.resources.samples import bulk_patch_body
+from titerlane.resources.sequencing import check_manifest, check_verification, upload_headers
 
 T = TypeVar("T")
 
@@ -520,7 +520,7 @@ class AsyncResults(AsyncResource):
         target = await asyncio.to_thread(download_target, dest, link)
         digest = hashlib.md5(usedforsecurity=False)
         fd, tmp_name = await asyncio.to_thread(
-            tempfile.mkstemp, prefix=".labchain-", dir=target.parent
+            tempfile.mkstemp, prefix=".titerlane-", dir=target.parent
         )
         tmp_path = Path(tmp_name)
         try:

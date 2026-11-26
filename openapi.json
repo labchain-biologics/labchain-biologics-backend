@@ -2464,7 +2464,7 @@
             "type": "string"
           },
           "slug": {
-            "description": "Lowercase letters, digits and dashes. Sent as the X-LabChain-Workspace header.",
+            "description": "Lowercase letters, digits and dashes. Sent as the X-Titerlane-Workspace header.",
             "maxLength": 64,
             "minLength": 1,
             "pattern": "^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$",
@@ -2528,8 +2528,8 @@
     }
   },
   "info": {
-    "description": "Regulated multi-omics LIMS and Nextflow orchestration API for LabChain Biologics (21 CFR Part 11 audit trail).",
-    "title": "LabChain Biologics API",
+    "description": "Regulated multi-omics LIMS and Nextflow orchestration API for Titerlane Biologics (21 CFR Part 11 audit trail).",
+    "title": "Titerlane Biologics API",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",
@@ -2925,7 +2925,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -2936,7 +2936,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -2983,7 +2983,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -2994,7 +2994,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3057,7 +3057,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3068,7 +3068,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3121,7 +3121,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3132,7 +3132,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3171,12 +3171,12 @@
     },
     "/api/v1/members": {
       "get": {
-        "description": "Members of the workspace named by the ``X-LabChain-Workspace`` header.",
+        "description": "Members of the workspace named by the ``X-Titerlane-Workspace`` header.",
         "operationId": "list_members",
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3187,7 +3187,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3232,7 +3232,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3243,7 +3243,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3306,7 +3306,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3317,7 +3317,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3361,7 +3361,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3372,7 +3372,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3425,7 +3425,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3436,7 +3436,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3492,7 +3492,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3503,7 +3503,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3579,7 +3579,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3590,7 +3590,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3647,7 +3647,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3658,7 +3658,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3715,7 +3715,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3726,7 +3726,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3825,7 +3825,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3836,7 +3836,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3882,7 +3882,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3893,7 +3893,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -3956,7 +3956,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -3967,7 +3967,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4092,7 +4092,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4103,7 +4103,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4161,7 +4161,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4172,7 +4172,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4300,7 +4300,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4311,7 +4311,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4356,7 +4356,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4367,7 +4367,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4420,7 +4420,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4431,7 +4431,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4486,7 +4486,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4497,7 +4497,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4555,7 +4555,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4566,7 +4566,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4629,7 +4629,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4640,7 +4640,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4684,7 +4684,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4695,7 +4695,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4746,7 +4746,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4757,7 +4757,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4833,7 +4833,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4844,7 +4844,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4889,7 +4889,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4900,7 +4900,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],
@@ -4963,7 +4963,7 @@
           },
           {
             "in": "header",
-            "name": "X-LabChain-Workspace",
+            "name": "X-Titerlane-Workspace",
             "required": true,
             "schema": {
               "anyOf": [
@@ -4974,7 +4974,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Labchain-Workspace"
+              "title": "X-Titerlane-Workspace"
             }
           }
         ],

@@ -9,7 +9,7 @@ Authenticate with email/password, Google ID token, or OAuth2 form. Returns a JWT
 | Success | `200 OK` |
 
 !!! note "Workspace"
-    Login is not workspace-scoped: no `X-LabChain-Workspace` header is needed. The login is
+    Login is not workspace-scoped: no `X-Titerlane-Workspace` header is needed. The login is
     audited with an empty workspace. Use [`GET /auth/me`](me.md) to list the user's workspaces.
 
 ## Request model
@@ -57,7 +57,7 @@ Authenticate with email/password, Google ID token, or OAuth2 form. Returns a JWT
 curl -s -X POST 'http://localhost:8000/api/v1/auth/login' \
   -H 'Content-Type: application/json' \
   -d '{
-    "email": "tech@labchain.example",
+    "email": "tech@titerlane.example",
     "password": "changeme123"
   }'
 ```

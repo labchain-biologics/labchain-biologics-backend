@@ -16,7 +16,7 @@ No body. Requires:
 Authorization: Bearer <access_token>
 ```
 
-`X-LabChain-Workspace` is not used by this route (the user is not workspace-scoped).
+`X-Titerlane-Workspace` is not used by this route (the user is not workspace-scoped).
 
 ## Response model (`UserMe`)
 
@@ -34,7 +34,7 @@ Authorization: Bearer <access_token>
 | Field | Type | Description |
 | --- | --- | --- |
 | `workspaceId` | `uuid` | Workspace id |
-| `slug` | `string` | Value to send as `X-LabChain-Workspace` |
+| `slug` | `string` | Value to send as `X-Titerlane-Workspace` |
 | `name` | `string` | Display name |
 | `role` | `Role` | Role **in this workspace**: `lab_technician` or `bioinformatics_lead` |
 
@@ -48,7 +48,7 @@ curl -s 'http://localhost:8000/api/v1/auth/me' \
 ```json
 {
   "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
-  "email": "tech@labchain.example",
+  "email": "tech@titerlane.example",
   "fullName": "Alex Technician",
   "isActive": true,
   "createdAt": "2026-08-10T12:00:00Z",

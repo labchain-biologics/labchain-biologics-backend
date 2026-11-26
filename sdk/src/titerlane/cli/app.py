@@ -1,7 +1,7 @@
 """
-``labchain``: the LabChain Biologics API from a shell.
+``titerlane``: the Titerlane Biologics API from a shell.
 
-Configuration comes from ``LABCHAIN_URL``, ``LABCHAIN_TOKEN`` and ``LABCHAIN_WORKSPACE`` (or
+Configuration comes from ``TITERLANE_URL``, ``TITERLANE_TOKEN`` and ``TITERLANE_WORKSPACE`` (or
 ``--url`` / ``--workspace``). The token is deliberately not a command-line option: arguments
 end up in shell history and process listings.
 
@@ -24,10 +24,10 @@ from pydantic import BaseModel, ValidationError
 from rich.console import Console
 from rich.table import Table
 
-from labchain._version import __version__
-from labchain.client import Client
-from labchain.errors import LabChainError
-from labchain.models import (
+from titerlane._version import __version__
+from titerlane.client import Client
+from titerlane.errors import TiterlaneError
+from titerlane.models import (
     JobStatus,
     OmicsModality,
     OutputFileType,
@@ -46,8 +46,8 @@ stdout = Console(soft_wrap=True)
 stderr = Console(stderr=True, soft_wrap=True)
 
 app = typer.Typer(
-    name="labchain",
-    help="LabChain Biologics from the command line: samples, FASTQ, pipeline runs, results.",
+    name="titerlane",
+    help="Titerlane Biologics from the command line: samples, FASTQ, pipeline runs, results.",
     no_args_is_help=True,
     pretty_exceptions_enable=False,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -85,17 +85,17 @@ def configure(
     ctx: typer.Context,
     url: Annotated[
         str | None,
-        typer.Option("--url", envvar="LABCHAIN_URL", help="Server root, without /api/v1."),
+        typer.Option("--url", envvar="TITERLANE_URL", help="Server root, without /api/v1."),
     ] = None,
     workspace: Annotated[
         str | None,
-        typer.Option("--workspace", "-w", envvar="LABCHAIN_WORKSPACE", help="Workspace slug."),
+        typer.Option("--workspace", "-w", envvar="TITERLANE_WORKSPACE", help="Workspace slug."),
     ] = None,
     as_json: Annotated[
         bool, typer.Option("--json", help="Print JSON (API field names) instead of tables.")
     ] = False,
 ) -> None:
-    """Credentials: set LABCHAIN_TOKEN to a personal access token (see `labchain token create`)."""
+    """Credentials: set TITERLANE_TOKEN to a personal access token (`titerlane token create`)."""
     ctx.obj = State(url=url, workspace=workspace, json=as_json)
 
 
@@ -113,7 +113,7 @@ def _failures() -> Iterator[None]:
     """SDK and validation errors become one ``error:`` line on stderr and exit status 1."""
     try:
         yield
-    except LabChainError as exc:
+    except TiterlaneError as exc:
         stderr.print(f"[red]error:[/red] {exc}", highlight=False, markup=True)
         raise typer.Exit(1) from None
     except ValidationError as exc:
@@ -221,10 +221,10 @@ def token_create(
 ) -> None:
     """
     Sign in with your password and issue a personal access token. The secret is printed once
-    on stdout; store it (e.g. as LABCHAIN_TOKEN in a secret manager).
+    on stdout; store it (e.g. as TITERLANE_TOKEN in a secret manager).
 
     The password is always prompted (hidden), never an option, so it stays out of shell
-    history. Prompts go to stderr: `export LABCHAIN_TOKEN=$(labchain token create ci)` works.
+    history. Prompts go to stderr: `export TITERLANE_TOKEN=$(titerlane token create ci)` works.
     """
     state = _state(ctx)
     email = email or typer.prompt("E-mail", err=True)

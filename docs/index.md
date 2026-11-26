@@ -1,6 +1,6 @@
-# LabChain Biologics Backend
+# Titerlane Biologics Backend
 
-FastAPI async backend for **LabChain Biologics** — a regulated multi-omics LIMS and Nextflow orchestration platform with 21 CFR Part 11–style append-only audit trails.
+FastAPI async backend for **Titerlane Biologics** — a regulated multi-omics LIMS and Nextflow orchestration platform with 21 CFR Part 11–style append-only audit trails.
 
 ## Stack
 
@@ -24,7 +24,7 @@ Python **3.11+** required. Package manager: [uv](https://docs.astral.sh/uv/).
 - Run status + SSE log streaming
 - Result downloads (VCF, BAM, MultiQC, etc.)
 - RBAC: `lab_technician` vs `bioinformatics_lead`
-- Multi-tenant workspaces with per-workspace roles (`X-LabChain-Workspace` = workspace slug)
+- Multi-tenant workspaces with per-workspace roles (`X-Titerlane-Workspace` = workspace slug)
 - Append-only audit trail on mutations
 
 ## Next steps

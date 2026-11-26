@@ -47,7 +47,7 @@ No body.
 ```bash
 curl -s 'http://localhost:8000/api/v1/samples?modality=transcriptomics&qcStatus=pass&limit=20' \
   -H 'Authorization: Bearer <access_token>' \
-  -H 'X-LabChain-Workspace: demo'
+  -H 'X-Titerlane-Workspace: demo'
 ```
 
 ```json

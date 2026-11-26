@@ -12,14 +12,14 @@ server's maximum lifetime (365 days by default) instead of the one-hour login se
 Creating a token requires a **password login**: a token cannot create another token.
 
 ```python
-from labchain import Client
+from titerlane import Client
 
 with Client.login("you@lab.example", "your-password", base_url="http://localhost:8000") as c:
     created = c.auth.tokens.create("nightly QC job", expires_in_days=90)
     print(created.token)  # the secret is returned only once
 ```
 
-Store `created.token` in a secret manager or CI secret, then expose it as `LABCHAIN_TOKEN`.
+Store `created.token` in a secret manager or CI secret, then expose it as `TITERLANE_TOKEN`.
 The server keeps only a digest and cannot show the secret again.
 
 Manage your tokens with any credential, including a token:
@@ -51,8 +51,8 @@ credential: a login JWT stays valid until it expires, a token until it is revoke
 
 ## Workspaces
 
-Most routes are scoped to a workspace, sent as the `X-LabChain-Workspace` header. The SDK
-takes it from `workspace=` or `LABCHAIN_WORKSPACE`. A workspace-scoped call without one raises
+Most routes are scoped to a workspace, sent as the `X-Titerlane-Workspace` header. The SDK
+takes it from `workspace=` or `TITERLANE_WORKSPACE`. A workspace-scoped call without one raises
 `ConfigurationError` before any request is sent.
 
 ```python
@@ -85,4 +85,4 @@ client.members.remove(user_id)
 - Signed object-storage URLs (FASTQ upload, result download) are credentials too. The SDK
   sends them through a separate HTTP client that never carries the API `Authorization`
   header, and leaves them out of `repr()` and errors.
-- Debug logging (`logging.getLogger("labchain")`) shows method, path and attempt number only.
+- Debug logging (`logging.getLogger("titerlane")`) shows method, path and attempt number only.

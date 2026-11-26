@@ -1,6 +1,6 @@
 # Configuration
 
-See [`.env.example`](https://github.com/labchain-biologics/labchain-biologics-backend/blob/main/.env.example). Important variables:
+See [`.env.example`](https://github.com/titerlane-biologics/titerlane-biologics-backend/blob/main/.env.example). Important variables:
 
 | Variable | Purpose |
 | --- | --- |

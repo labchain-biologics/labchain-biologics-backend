@@ -1,1 +1,1 @@
-"""LabChain Biologics FastAPI application package."""
+"""Titerlane Biologics FastAPI application package."""

@@ -1,6 +1,6 @@
-# LabChain Biologics Backend
+# Titerlane Biologics Backend
 
-FastAPI async backend for **LabChain Biologics** — a regulated multi-omics LIMS and Nextflow orchestration platform with 21 CFR Part 11–style append-only audit trails.
+FastAPI async backend for **Titerlane Biologics** — a regulated multi-omics LIMS and Nextflow orchestration platform with 21 CFR Part 11–style append-only audit trails.
 
 ## Stack
 
@@ -28,7 +28,7 @@ Python **3.11+** required. Package manager: [uv](https://docs.astral.sh/uv/).
 - FASTQ integrity: MD5 computed from the stored object
 - Result downloads (VCF, BAM, MultiQC, etc.)
 - RBAC: `lab_technician` vs `bioinformatics_lead`
-- Multi-tenant workspaces with per-workspace roles (`X-LabChain-Workspace` = workspace slug)
+- Multi-tenant workspaces with per-workspace roles (`X-Titerlane-Workspace` = workspace slug)
 - Append-only audit trail on mutations
 
 ## Prerequisites
@@ -43,7 +43,7 @@ Python **3.11+** required. Package manager: [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone <repo-url>
-cd labchain-biologics-backend
+cd titerlane-biologics-backend
 uv sync --extra dev
 ```
 
@@ -64,8 +64,8 @@ docker compose --env-file .env up -d
 
 Starts:
 
-- **Postgres** on `localhost:5433` (`labchain` / `labchain` / `labchain`)
-- **LocalStack** S3 on `localhost:4566` (bucket `labchain-biologics` created on init)
+- **Postgres** on `localhost:5433` (`titerlane` / `titerlane` / `titerlane`)
+- **LocalStack** S3 on `localhost:4566` (bucket `titerlane-biologics` created on init)
 
 To stop the local infrastructure:
 
@@ -112,7 +112,7 @@ All authenticated routes expect:
 
 ```http
 Authorization: Bearer <access_token>
-X-LabChain-Workspace: <workspace-slug>
+X-Titerlane-Workspace: <workspace-slug>
 ```
 
 | Area | Prefix | Notes |
@@ -158,7 +158,7 @@ uv run poe docs-serve
 ```
 
 On push to `main`, GitHub Actions publishes to GitHub Pages
-(`https://labchain-biologics.github.io/labchain-biologics-backend/`).
+(`https://titerlane-biologics.github.io/titerlane-biologics-backend/`).
 
 ## Configuration
 
@@ -193,7 +193,7 @@ Roles are granted per workspace (`workspace_memberships`).
 
 ## License
 
-Copyright (C) 2026 LabChain Biologics.
+Copyright (C) 2026 Titerlane Biologics.
 
 This program is free software: you can redistribute it and/or modify it under the terms of
 the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).
@@ -203,7 +203,7 @@ service, you must offer its users the corresponding source code under the same l
 
 ### Python SDK: Apache-2.0
 
-The Python SDK in [`sdk/`](sdk/) (`labchain-biologics-sdk`) is **not** under the AGPL: it is
+The Python SDK in [`sdk/`](sdk/) (`titerlane-biologics-sdk`) is **not** under the AGPL: it is
 licensed under the [Apache License 2.0](sdk/LICENSE) (`Apache-2.0`). It contains no server
 code and only talks to the server over its public HTTP API, so scripts, notebooks and
 applications that import it can use any licence, including proprietary ones.

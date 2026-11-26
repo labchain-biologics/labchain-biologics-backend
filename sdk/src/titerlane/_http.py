@@ -17,14 +17,14 @@ from typing import Any, Self
 
 import httpx
 
-from labchain._version import __version__
-from labchain.errors import APIConnectionError, ConfigurationError, error_for_status
+from titerlane._version import __version__
+from titerlane.errors import APIConnectionError, ConfigurationError, error_for_status
 
-logger = logging.getLogger("labchain")
+logger = logging.getLogger("titerlane")
 
 API_PREFIX = "/api/v1"
-WORKSPACE_HEADER = "X-LabChain-Workspace"
-USER_AGENT = f"labchain-biologics-sdk/{__version__}"
+WORKSPACE_HEADER = "X-Titerlane-Workspace"
+USER_AGENT = f"titerlane-biologics-sdk/{__version__}"
 # Retried on idempotent requests only: the request may have reached a briefly unavailable server.
 RETRY_STATUSES = frozenset({502, 503, 504})
 IDEMPOTENT_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
@@ -46,7 +46,7 @@ class _TransportBase:
         self, base_url: str, token: str | None, workspace: str | None, *, max_retries: int
     ) -> None:
         if not base_url:
-            raise ConfigurationError("base_url is required (or set LABCHAIN_URL)")
+            raise ConfigurationError("base_url is required (or set TITERLANE_URL)")
         self.base_url = base_url.rstrip("/")
         self.token = token
         self.workspace = workspace
@@ -69,7 +69,7 @@ class _TransportBase:
             if not self.workspace:
                 raise ConfigurationError(
                     "This call is scoped to a workspace: pass workspace= to the client, set "
-                    "LABCHAIN_WORKSPACE, or use client.with_workspace('<slug>')"
+                    "TITERLANE_WORKSPACE, or use client.with_workspace('<slug>')"
                 )
             headers[WORKSPACE_HEADER] = self.workspace
         return headers
@@ -85,7 +85,7 @@ class _TransportBase:
 
 
 class Transport(_TransportBase):
-    """Authenticated, synchronous access to one LabChain API, optionally bound to a workspace."""
+    """Authenticated, synchronous access to one Titerlane API, optionally bound to a workspace."""
 
     def __init__(
         self,

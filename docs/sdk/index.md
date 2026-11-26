@@ -1,14 +1,14 @@
 # Python SDK
 
-`labchain-biologics-sdk` is the Python client for the LabChain Biologics API. Use it from
+`titerlane-biologics-sdk` is the Python client for the Titerlane Biologics API. Use it from
 scripts, Jupyter notebooks or CI jobs to register samples, upload and verify FASTQ files,
 launch nf-core pipelines, follow their logs and download results, without writing HTTP calls
 by hand.
 
 | | |
 | --- | --- |
-| Import name | `labchain` |
-| Distribution | `labchain-biologics-sdk` |
+| Import name | `titerlane` |
+| Distribution | `titerlane-biologics-sdk` |
 | Python | 3.11+ |
 | Dependencies | `httpx`, `pydantic` (v2); `typer` with the `cli` extra |
 | Licence | Apache-2.0 (the server is AGPL-3.0-only; the SDK contains no server code) |
@@ -24,8 +24,8 @@ and log streaming.
     The package is not published yet. Install it from a checkout of this repository.
 
 ```bash
-git clone https://github.com/labchain-biologics/labchain-biologics-backend.git
-pip install ./labchain-biologics-backend/sdk
+git clone https://github.com/titerlane-biologics/titerlane-biologics-backend.git
+pip install ./titerlane-biologics-backend/sdk
 ```
 
 Or, with uv, inside the backend checkout (the SDK is a workspace member):
@@ -41,18 +41,18 @@ precedence.
 
 | Variable | `Client` argument | Description |
 | --- | --- | --- |
-| `LABCHAIN_URL` | `base_url` | Server root, without `/api/v1` (e.g. `http://localhost:8000`) |
-| `LABCHAIN_TOKEN` | `token` | A [personal access token](authentication.md) (`lcb_pat_...`) |
-| `LABCHAIN_WORKSPACE` | `workspace` | Slug of the workspace used by workspace-scoped calls |
+| `TITERLANE_URL` | `base_url` | Server root, without `/api/v1` (e.g. `http://localhost:8000`) |
+| `TITERLANE_TOKEN` | `token` | A [personal access token](authentication.md) (`lcb_pat_...`) |
+| `TITERLANE_WORKSPACE` | `workspace` | Slug of the workspace used by workspace-scoped calls |
 
 ```bash
-export LABCHAIN_URL=http://localhost:8000
-export LABCHAIN_TOKEN=lcb_pat_...
-export LABCHAIN_WORKSPACE=demo-lab
+export TITERLANE_URL=http://localhost:8000
+export TITERLANE_TOKEN=lcb_pat_...
+export TITERLANE_WORKSPACE=demo-lab
 ```
 
 ```python
-from labchain import Client
+from titerlane import Client
 
 with Client() as client:
     print(client.health())
@@ -73,7 +73,7 @@ Use the client as a context manager, or call `client.close()` when done.
 ## Ten-line tour
 
 ```python
-from labchain import Client
+from titerlane import Client
 
 with Client() as client:
     sample = client.samples.create(sample_code="RNA-001", modality="transcriptomics")
@@ -93,6 +93,6 @@ every method. For asyncio code, [`AsyncClient`](async.md) offers the same method
 - [Authentication](authentication.md): personal access tokens, password login, workspaces
 - [User guide](guide.md): samples, FASTQ, pipeline runs, logs, results
 - [Async client](async.md): `AsyncClient` for asyncio code and concurrent transfers
-- [Command line](cli.md): the `labchain` command (`cli` extra)
+- [Command line](cli.md): the `titerlane` command (`cli` extra)
 - [Reference](reference.md): client, resources, models and enums
 - [Errors](errors.md): exception hierarchy and retries
