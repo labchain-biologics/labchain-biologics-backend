@@ -185,6 +185,12 @@ Roles are granted per workspace (`workspace_memberships`).
 | `lab_technician` | Samples, FASTQ, browse pipelines/results |
 | `bioinformatics_lead` | Above + pipeline run launch + workspace member management |
 
+## Contributing and security
+
+- Report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
+- Contributions: see [CONTRIBUTING.md](CONTRIBUTING.md) (external code contributions open once a CLA is in place).
+- Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
 ## License
 
 Copyright (C) 2026 LabChain Biologics.
