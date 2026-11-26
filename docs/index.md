@@ -35,3 +35,8 @@ Python **3.11+** required. Package manager: [uv](https://docs.astral.sh/uv/).
 4. [Configuration](configuration.md) — environment variables
 5. [Development](development.md) — tests, lint, docs
 6. [Architecture](architecture.md) — project layout and conventions
+
+## Licence
+
+The server is licensed under AGPL-3.0-only. The [Python SDK](sdk/index.md) (`sdk/`) is
+licensed separately under Apache-2.0, so code that uses it can have any licence.
