@@ -21,6 +21,15 @@ dependencies = [
     "pydantic>=2.7.0",
 ]
 
+[project.optional-dependencies]
+# The `labchain` command: pip install "labchain-biologics-sdk[cli]".
+cli = [
+    "typer>=0.16.1",
+]
+
+[project.scripts]
+labchain = "labchain.cli:main"
+
 [project.urls]
 Documentation = "https://labchain-biologics.github.io/labchain-biologics-backend/"
 Source = "https://github.com/labchain-biologics/labchain-biologics-backend/tree/main/sdk"
@@ -29,6 +38,7 @@ Source = "https://github.com/labchain-biologics/labchain-biologics-backend/tree/
 dev = [
     "pytest>=8.3.0",
     "mypy>=1.13.0",
+    "typer>=0.16.1",
 ]
 
 [build-system]

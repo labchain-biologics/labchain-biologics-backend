@@ -104,6 +104,7 @@ nav:
       - Authentication: sdk/authentication.md
       - User guide: sdk/guide.md
       - Async client: sdk/async.md
+      - Command line: sdk/cli.md
       - Reference: sdk/reference.md
       - Errors: sdk/errors.md
   - Configuration: configuration.md
