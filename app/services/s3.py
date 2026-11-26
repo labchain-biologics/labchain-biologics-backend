@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import threading
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, cast
@@ -16,6 +17,11 @@ from app.core.config import settings
 if TYPE_CHECKING:
     # Type stubs are a dev-only dependency: never import them at runtime.
     from mypy_boto3_s3 import S3Client
+
+
+# boto3 does not support creating clients from its default session in several threads at
+# once, and the first use of the client is usually inside asyncio.to_thread workers.
+_client_lock = threading.Lock()
 
 
 @lru_cache
@@ -58,9 +64,18 @@ class ObjectChecksum:
 
 class S3Service:
     def __init__(self, client: S3Client | None = None) -> None:
-        self._client = client or get_s3_client()
+        self._injected_client = client
         self._bucket = settings.s3_bucket
         self._expire = settings.s3_presign_expire_seconds
+
+    @property
+    def _client(self) -> S3Client:
+        # Created on first use, not at import: code that never touches storage (migrations,
+        # titerlane-admin) must not depend on S3 settings or AWS credential resolution.
+        if self._injected_client is not None:
+            return self._injected_client
+        with _client_lock:
+            return get_s3_client()
 
     def ensure_bucket(self) -> None:
         try:

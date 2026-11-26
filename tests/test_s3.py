@@ -155,3 +155,32 @@ def test_object_checksum_hashes_kms_encrypted_objects(mock_s3_client: MagicMock)
     assert mock_s3_client.get_object.call_args.kwargs["IfMatch"] == (
         '"0123456789abcdef0123456789abcdef"'
     )
+
+
+def test_client_is_created_once_across_threads(monkeypatch: pytest.MonkeyPatch) -> None:
+    import threading
+    import time
+
+    from app.services import s3
+
+    created: list[object] = []
+
+    def slow_client(**_: object) -> object:
+        time.sleep(0.05)  # widen the race window
+        client = object()
+        created.append(client)
+        return client
+
+    s3.get_s3_client.cache_clear()
+    monkeypatch.setattr(s3.boto3, "client", slow_client)
+    service = S3Service()
+    seen: list[object] = []
+    threads = [threading.Thread(target=lambda: seen.append(service._client)) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    s3.get_s3_client.cache_clear()
+
+    assert len(created) == 1
+    assert all(client is created[0] for client in seen)

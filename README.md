@@ -84,7 +84,7 @@ but **no memberships** (historical activity does not prove who should have acces
 access explicitly:
 
 ```bash
-uv run python scripts/grant_membership.py --email lead@lab.org \
+uv run titerlane-admin grant-membership --email lead@lab.org \
   --workspace <slug> --role bioinformatics_lead
 ```
 
