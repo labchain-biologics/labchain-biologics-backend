@@ -5,8 +5,8 @@ API: a multi-omics LIMS with nf-core / Nextflow orchestration and a 21 CFR Part 
 Register samples, upload and verify FASTQ files, launch pipelines, follow their logs and
 download results from scripts, notebooks or CI.
 
-The SDK is licensed under **Apache-2.0**. The server is AGPL-3.0-only; the SDK does not
-include server code.
+The SDK is licensed under **Apache-2.0** (Copyright (C) 2026 Dalyan Ventura, see `NOTICE`).
+The server is AGPL-3.0-only; the SDK does not include server code.
 
 > Status: alpha (0.x). The API may change between minor versions.
 

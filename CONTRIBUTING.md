@@ -42,6 +42,11 @@ The development workflow is described in [docs/development.md](docs/development.
 
 ## Licences
 
+The copyright in the project is held by Dalyan Ventura (see the [README](README.md#license)).
+Titerlane Biologics is the project's name, not a legal entity. Keeping every right with a
+single holder is what allows the dual licensing described above; the CLA will grant the
+holder the rights needed for it.
+
 By contributing (once the CLA is in place), you agree that your contribution is licensed
 under the licence of the part of the repository it touches: AGPL-3.0-only for the server,
 Apache-2.0 for `sdk/`. See the [README](README.md#license).
