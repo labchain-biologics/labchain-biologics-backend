@@ -133,31 +133,41 @@ response buffering for it if your proxy buffers by default (nginx: `proxy_buffer
 ## 6. Create the first user
 
 Self-registration (`POST /auth/register`) is always disabled when `APP_ENV=production`.
-Create the first account with a one-off container that enables registration and is only
-reachable from the host itself, then stop it:
+Create the first account with the `titerlane-admin` operator command, in a one-off container
+(it prompts for the password twice):
 
 ```bash
-docker compose run -d --rm --name titerlane-bootstrap \
-  -e APP_ENV=bootstrap -e BOOTSTRAP_REGISTRATION_ENABLED=true \
-  -p 127.0.0.1:8001:8000 api
-
-curl -s -X POST 'http://127.0.0.1:8001/api/v1/auth/register?fullName=Lab%20Lead' \
-  -H 'Content-Type: application/json' \
-  -d '{"email": "lead@lab.example", "password": "<a strong password>"}'
-
-docker stop titerlane-bootstrap
+docker compose run --rm --no-deps api \
+  titerlane-admin create-user --email lead@lab.example --full-name "Lab Lead"
 ```
 
-The registration is written to the audit trail. That user then logs in through the
-production API and creates a workspace ([`POST /workspaces`](api/workspaces/create.md)),
-becoming its `bioinformatics_lead`, and adds members
-([`POST /members`](api/workspaces/members.md)). With `GOOGLE_CLIENT_ID` set, users can also
-sign in with Google.
+The user then logs in through the API and creates a workspace
+([`POST /workspaces`](api/workspaces/create.md)), becoming its `bioinformatics_lead`, and
+adds members ([`POST /members`](api/workspaces/members.md)). With `GOOGLE_CLIENT_ID` set,
+users can also sign in with Google.
+
+See [Operator commands](#operator-commands) to create the workspace from the command line
+instead.
 
 Set `WORKSPACE_CREATION_ENABLED=false` once your workspaces exist if users should not create
 their own.
 
 ## Operations
+
+### Operator commands
+
+`titerlane-admin` runs on the server with its settings and writes every action to the audit
+trail, with no user actor and the reason shown below. In Compose, prefix each command with
+`docker compose run --rm --no-deps api`.
+
+| Command | Purpose | Audit reason |
+| --- | --- | --- |
+| `titerlane-admin create-user --email <email> [--full-name <name>]` | Create a password user. Same rules as the API: valid email, 8–128 character password | `operator create-user` |
+| `titerlane-admin grant-membership --email <email> --workspace <slug> --role <role> [--create --name <name>]` | Give an active user a role (`lab_technician` or `bioinformatics_lead`) in an active workspace, optionally creating it with the same slug rules as the API. Refuses to demote a workspace's only lead | `operator grant` |
+
+Passwords are never command-line arguments (shell history, process list). Without a
+terminal, use `docker compose run -T` with `--password-stdin` and send the password on the
+first line of standard input.
 
 ### Workers and scaling
 
