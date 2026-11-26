@@ -18,6 +18,7 @@ uv run poe docs-serve          # MkDocs (needs --extra docs)
 uv sync --all-packages --extra dev   # also installs the Python SDK (sdk/)
 uv run poe sdk-test            # SDK tests (no network)
 uv run poe sdk-typecheck       # mypy --strict on the SDK
+uv run --package labchain-biologics-sdk labchain --help   # the SDK's CLI
 ```
 
 `SECRET_KEY` (≥ 32 chars, not a placeholder) must be set, including for tests (see `tests/conftest.py`).
@@ -40,6 +41,9 @@ uv run poe sdk-typecheck       # mypy --strict on the SDK
   same PR.
 - Never log or `repr()` tokens or signed storage URLs; signed URLs never receive the API
   `Authorization` header.
+- CLI (`labchain.cli`, Typer, `cli` extra only): thin layer over `Client`, no logic of its own.
+  No `--token`/`--password` options (shell history); prompts and diagnostics go to stderr so
+  stdout stays parseable; `--json` uses API field names; exit 1 on SDK errors, 2 on usage.
 - Unit tests use `httpx.MockTransport` (`sdk/tests/fakes.py`), no network.
 - `sdk/tests/test_contract.py` checks SDK models, enums and operations against `openapi.json`:
   regenerate the contract (`poe openapi`) and update the SDK together.

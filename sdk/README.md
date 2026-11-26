@@ -81,12 +81,26 @@ waiting forever.
 import asyncio
 from labchain import AsyncClient
 
+
 async def main() -> None:
     async with AsyncClient() as client:
         async for sample in client.samples.iter(qc_status="pass"):
             print(sample.sample_code)
 
+
 asyncio.run(main())
+```
+
+## Command line
+
+The `cli` extra adds a `labchain` command (`pip install "./sdk[cli]"` from a checkout):
+
+```bash
+export LABCHAIN_TOKEN=$(labchain token create "my laptop" --email you@lab.example)
+labchain samples list --qc-status pass
+labchain fastq upload --sample "$SAMPLE_ID" fastq/RNA-001_*.fastq.gz
+labchain runs launch rnaseq -s "$SAMPLE_ID" --follow
+labchain --json results list --run "$RUN_ID"
 ```
 
 ## Workspaces

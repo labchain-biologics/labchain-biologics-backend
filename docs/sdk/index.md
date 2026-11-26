@@ -10,7 +10,7 @@ by hand.
 | Import name | `labchain` |
 | Distribution | `labchain-biologics-sdk` |
 | Python | 3.11+ |
-| Dependencies | `httpx`, `pydantic` (v2) |
+| Dependencies | `httpx`, `pydantic` (v2); `typer` with the `cli` extra |
 | Licence | Apache-2.0 (the server is AGPL-3.0-only; the SDK contains no server code) |
 | Status | Alpha (0.x): the interface may change between minor versions |
 
@@ -93,5 +93,6 @@ every method. For asyncio code, [`AsyncClient`](async.md) offers the same method
 - [Authentication](authentication.md): personal access tokens, password login, workspaces
 - [User guide](guide.md): samples, FASTQ, pipeline runs, logs, results
 - [Async client](async.md): `AsyncClient` for asyncio code and concurrent transfers
+- [Command line](cli.md): the `labchain` command (`cli` extra)
 - [Reference](reference.md): client, resources, models and enums
 - [Errors](errors.md): exception hierarchy and retries
