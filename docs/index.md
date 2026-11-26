@@ -31,6 +31,7 @@ Python **3.11+** required. Package manager: [uv](https://docs.astral.sh/uv/).
 
 1. [Getting started](getting-started.md) — run the API locally
 2. [API overview](api-overview.md) — route map, enums, and per-endpoint docs
-3. [Configuration](configuration.md) — environment variables
-4. [Development](development.md) — tests, lint, docs
-5. [Architecture](architecture.md) — project layout and conventions
+3. [Python SDK](sdk/index.md) — script the API from Python, notebooks or CI
+4. [Configuration](configuration.md) — environment variables
+5. [Development](development.md) — tests, lint, docs
+6. [Architecture](architecture.md) — project layout and conventions

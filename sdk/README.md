@@ -12,11 +12,15 @@ include server code.
 
 ## Install
 
+The package is not on PyPI yet. Install it from a checkout of the repository:
+
 ```bash
-pip install labchain-biologics-sdk
+git clone https://github.com/labchain-biologics/labchain-biologics-backend.git
+pip install ./labchain-biologics-backend/sdk
 ```
 
-Requires Python 3.11+.
+Requires Python 3.11+. Full documentation: the "Python SDK" section of the
+[backend docs](https://labchain-biologics.github.io/labchain-biologics-backend/sdk/).
 
 ## Authenticate
 
