@@ -99,6 +99,12 @@ nav:
           - GET /results: api/results/list.md
           - GET /results/runs/{id}: api/results/by-run.md
           - GET /results/{id}/download: api/results/download.md
+  - Python SDK:
+      - Overview: sdk/index.md
+      - Authentication: sdk/authentication.md
+      - User guide: sdk/guide.md
+      - Reference: sdk/reference.md
+      - Errors: sdk/errors.md
   - Configuration: configuration.md
   - Development: development.md
   - Architecture: architecture.md
