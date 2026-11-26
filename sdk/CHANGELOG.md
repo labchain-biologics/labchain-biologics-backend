@@ -18,6 +18,8 @@ interface. Releases are tagged `sdk-vX.Y.Z`.
 - FASTQ uploads send the headers the server signed (`FastqRegistration.upload_headers`, the
   API's `uploadHeaders`) instead of assuming `Content-Type: application/gzip`. This needs a
   server that returns `uploadHeaders`.
+- Package metadata names the copyright holder (Dalyan Ventura) as author, and the
+  distributions ship a `NOTICE` file.
 - Workspace-scoped calls without a workspace now say "pass workspace= to the client" (was
   "to Client"), as the message also applies to `AsyncClient`.
 

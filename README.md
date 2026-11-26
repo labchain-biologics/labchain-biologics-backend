@@ -200,7 +200,10 @@ Roles are granted per workspace (`workspace_memberships`).
 
 ## License
 
-Copyright (C) 2026 Titerlane Biologics.
+Copyright (C) 2026 Dalyan Ventura.
+
+Titerlane Biologics is the name of the project; it is not a legal entity. The copyright
+holder is the author named above.
 
 This program is free software: you can redistribute it and/or modify it under the terms of
 the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).

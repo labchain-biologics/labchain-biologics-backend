@@ -5,10 +5,10 @@ dynamic = ["version"]
 description = "Python SDK for the Titerlane Biologics API (multi-omics LIMS and nf-core orchestration)"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "Titerlane Biologics" }]
+authors = [{ name = "Dalyan Ventura" }]
 # The SDK is Apache-2.0 so it can be imported by any code; the server stays AGPL-3.0-only.
 license = "Apache-2.0"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
 keywords = ["lims", "bioinformatics", "nextflow", "nf-core", "genomics", "sdk"]
 classifiers = [
     "Development Status :: 3 - Alpha",

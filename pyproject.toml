@@ -3,7 +3,7 @@ name = "titerlane-biologics"
 version = "0.1.0"
 description = "Titerlane Biologics — FastAPI LIMS & Nextflow orchestration backend"
 requires-python = ">=3.11"
-authors = [{ name = "Titerlane Biologics" }]
+authors = [{ name = "Dalyan Ventura" }]
 license = "AGPL-3.0-only"
 license-files = ["LICENSE"]
 dependencies = [

@@ -3,6 +3,7 @@ site_description: FastAPI async backend for Titerlane Biologics — multi-omics 
 site_url: https://titerlane-biologics.github.io/titerlane-biologics-backend/
 repo_url: https://github.com/titerlane-biologics/titerlane-biologics-backend
 repo_name: titerlane-biologics/titerlane-biologics-backend
+copyright: Copyright &copy; 2026 Dalyan Ventura
 edit_uri: edit/main/docs/
 
 docs_dir: docs
