@@ -1,0 +1,144 @@
+name: Server image
+
+# Builds the API server image (Dockerfile) and publishes it to GitHub Container Registry:
+#   ghcr.io/<owner>/titerlane-biologics-backend
+#
+# - Pull requests touching the image: build for amd64, then a Trivy scan. Nothing is pushed.
+# - Push to main: `edge` and `sha-<short>` tags.
+# - Tag `vX.Y.Z` (must match `version` in pyproject.toml): `X.Y.Z`, `X.Y` and `latest`.
+# Published images carry a signed build provenance attestation
+# (`gh attestation verify oci://ghcr.io/... --owner <owner>`).
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "app/**"
+      - "alembic/**"
+      - "alembic.ini"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "sdk/pyproject.toml"
+      - ".github/workflows/image.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/titerlane-biologics-backend
+
+jobs:
+  scan:
+    name: Build and scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.4.1
+
+      - name: Build image (amd64, local only)
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          load: true
+          tags: titerlane-biologics-backend:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check the image starts without dev dependencies
+        run: |
+          docker run --rm \
+            -e SECRET_KEY=ci-image-secret-key-at-least-32-characters-long \
+            titerlane-biologics-backend:scan \
+            python -c "from app.main import app; assert app.title"
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: titerlane-biologics-backend:scan
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+  publish:
+    name: Publish to GHCR
+    needs: scan
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Check that the tag matches the server version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version="$(sed -nE 's/^version = "([^"]+)"$/\1/p' pyproject.toml | head -n 1)"
+          tag="${GITHUB_REF_NAME#v}"
+          echo "tag=${tag} version=${version}"
+          if [ "${tag}" != "${version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match pyproject.toml version (${version})"
+            exit 1
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4.4.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=edge,branch=main
+            type=sha,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          flavor: |
+            latest=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push
+        id: push
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
