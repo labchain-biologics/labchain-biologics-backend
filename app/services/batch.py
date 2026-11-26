@@ -6,13 +6,16 @@ import logging
 import re
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import boto3
-from mypy_boto3_batch import BatchClient
-from mypy_boto3_batch.type_defs import ContainerOverridesTypeDef
 
 from app.core.config import settings
+
+if TYPE_CHECKING:
+    # Type stubs are a dev-only dependency: never import them at runtime.
+    from mypy_boto3_batch import BatchClient
+    from mypy_boto3_batch.type_defs import ContainerOverridesTypeDef
 
 logger = logging.getLogger(__name__)
 

@@ -439,6 +439,7 @@ async def test_fastq_keys_are_unique_and_confined_to_the_workspace(
     make_user: MakeUser,
     make_workspace: MakeWorkspace,
     login: Login,
+    fake_s3: FakeS3,
 ) -> None:
     headers = await _lead_headers(make_user, make_workspace, login)
     body = {"filename": "same.fastq.gz"}

@@ -5,14 +5,17 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
-from mypy_boto3_s3 import S3Client
 
 from app.core.config import settings
+
+if TYPE_CHECKING:
+    # Type stubs are a dev-only dependency: never import them at runtime.
+    from mypy_boto3_s3 import S3Client
 
 
 @lru_cache
@@ -26,7 +29,7 @@ def get_s3_client() -> S3Client:
     }
     if settings.s3_endpoint_url:
         client_kwargs["endpoint_url"] = settings.s3_endpoint_url
-    return cast(S3Client, boto3.client(**client_kwargs))
+    return cast("S3Client", boto3.client(**client_kwargs))
 
 
 _MD5_CHUNK_BYTES = 8 * 1024 * 1024

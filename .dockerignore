@@ -1,0 +1,13 @@
+# Build context allow-list: only what the server image needs.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!app/
+!alembic/
+!alembic.ini
+# uv validates the whole workspace against uv.lock, so the SDK manifest must be present.
+!sdk/pyproject.toml
+**/__pycache__
+**/*.py[cod]

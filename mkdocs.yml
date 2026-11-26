@@ -107,6 +107,7 @@ nav:
       - Command line: sdk/cli.md
       - Reference: sdk/reference.md
       - Errors: sdk/errors.md
+  - Self-hosting: self-hosting.md
   - Configuration: configuration.md
   - Development: development.md
   - Architecture: architecture.md
