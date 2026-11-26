@@ -14,6 +14,19 @@ Integration tests in `tests/integration/` run the real app against PostgreSQL. S
 `uv run poe start-local-run`; the suite creates and migrates a `labchain_test` database
 (override with `TEST_DATABASE_URL`). Without a reachable database they are skipped.
 
+## Dependencies (`uv.lock`)
+
+`uv.lock` pins every dependency of the server and the SDK (one uv workspace) and is
+committed, so installs are reproducible and auditable. After changing dependencies in a
+`pyproject.toml`, update it and commit both files together:
+
+```bash
+uv lock                 # or: uv lock --upgrade-package <name>
+```
+
+CI installs with `uv sync --locked` and fails when the lock no longer matches the
+`pyproject.toml` files. Dependabot proposes weekly lock updates.
+
 ## API contract (`openapi.json`)
 
 `openapi.json` at the repository root is the public API contract. API clients, including the

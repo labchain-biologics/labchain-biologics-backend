@@ -35,7 +35,7 @@ jobs:
           python-version: "3.11"
 
       - name: Sync docs dependencies
-        run: uv sync --extra docs
+        run: uv sync --locked --extra docs
 
       - name: Build site
         run: uv run mkdocs build --strict
