@@ -1,6 +1,7 @@
 [project]
 name = "labchain-biologics-sdk"
-version = "0.1.0"
+# Single source: src/labchain/_version.py (the release workflow checks the tag against it).
+dynamic = ["version"]
 description = "Python SDK for the LabChain Biologics API (multi-omics LIMS and nf-core orchestration)"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -44,6 +45,9 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/labchain/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/labchain"]
