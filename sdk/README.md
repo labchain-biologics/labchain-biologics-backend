@@ -73,6 +73,22 @@ If pipeline execution is disabled on the server, `launch` still records the run 
 `run.execution_submitted` is `False`, and `wait` raises `ExecutionDisabledError` instead of
 waiting forever.
 
+## Async
+
+`AsyncClient` has the same methods, awaited, for asyncio code and concurrent transfers:
+
+```python
+import asyncio
+from labchain import AsyncClient
+
+async def main() -> None:
+    async with AsyncClient() as client:
+        async for sample in client.samples.iter(qc_status="pass"):
+            print(sample.sample_code)
+
+asyncio.run(main())
+```
+
 ## Workspaces
 
 Workspace-scoped calls use `LABCHAIN_WORKSPACE` or the `workspace=` argument. Switch without
