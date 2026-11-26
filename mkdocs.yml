@@ -111,6 +111,8 @@ nav:
   - Configuration: configuration.md
   - Development: development.md
   - Architecture: architecture.md
+  - Design decisions:
+      - "ADR 0001: Edition boundary": design/0001-edition-boundary.md
 
 extra:
   social:
