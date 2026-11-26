@@ -398,6 +398,14 @@
             "title": "Sizebytes",
             "type": "integer"
           },
+          "uploadHeaders": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Headers to send, exactly, with the PUT to uploadUrl. They are part of the signature: storage rejects the upload if one differs or is missing.",
+            "title": "Uploadheaders",
+            "type": "object"
+          },
           "uploadUrl": {
             "title": "Uploadurl",
             "type": "string"
@@ -418,6 +426,7 @@
           "expectedMd5",
           "verificationStatus",
           "uploadUrl",
+          "uploadHeaders",
           "workspace",
           "createdAt"
         ],

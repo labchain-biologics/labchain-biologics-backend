@@ -37,6 +37,7 @@ record's file. A client-supplied `s3Key` outside the namespace is rejected (`422
 | `expectedMd5` | `string?` | Expected MD5 |
 | `verificationStatus` | `FastqVerificationStatus` | Initially `pending` |
 | `uploadUrl` | `string` | Presigned PUT URL |
+| `uploadHeaders` | `object` (string → string) | Headers to send, exactly, with the PUT |
 | `workspace` | `string` | Workspace |
 | `createdAt` | `datetime` | Created |
 
@@ -65,7 +66,22 @@ curl -s -X POST 'http://localhost:8000/api/v1/fastq/register' \
   "expectedMd5": "d41d8cd98f00b204e9800998ecf8427e",
   "verificationStatus": "pending",
   "uploadUrl": "http://localhost:4566/titerlane-biologics/demo/fastq/RNA-001_R1.fastq.gz?X-Amz-Algorithm=...",
+  "uploadHeaders": {"Content-Type": "application/gzip"},
   "workspace": "demo",
   "createdAt": "2026-08-10T12:00:00Z"
 }
+```
+
+## Uploading the file
+
+Send the file with `PUT` to `uploadUrl`, with **exactly** the headers in `uploadHeaders`
+(plus `Content-Length`, which HTTP clients set themselves). They are part of the signature:
+storage rejects the upload (`403`) if one is missing or differs. Do not send the API
+`Authorization` or `X-Titerlane-Workspace` headers to storage: the signed URL is the
+credential. Then call [`POST /fastq/{id}/verify`](verify.md).
+
+```bash
+curl -s -X PUT "$UPLOAD_URL" \
+  -H 'Content-Type: application/gzip' \
+  --upload-file RNA-001_R1.fastq.gz
 ```

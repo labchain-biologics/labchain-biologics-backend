@@ -65,6 +65,13 @@ class FastqRegisterResponse(BaseModel):
     expected_md5: str | None = Field(default=None, alias="expectedMd5")
     verification_status: FastqVerificationStatus = Field(alias="verificationStatus")
     upload_url: str = Field(alias="uploadUrl")
+    upload_headers: dict[str, str] = Field(
+        alias="uploadHeaders",
+        description=(
+            "Headers to send, exactly, with the PUT to uploadUrl. They are part of the "
+            "signature: storage rejects the upload if one differs or is missing."
+        ),
+    )
     workspace: str
     created_at: datetime = Field(alias="createdAt")
 

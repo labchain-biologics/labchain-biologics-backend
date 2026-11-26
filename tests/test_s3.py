@@ -20,13 +20,14 @@ def test_build_object_key_strips_leading_slashes(s3_service: S3Service) -> None:
     assert key == "ws-a/fastq/run1/sample.fastq.gz"
 
 
-def test_generate_presigned_upload_url(s3_service: S3Service, mock_s3_client: MagicMock) -> None:
-    url = s3_service.generate_presigned_upload_url(
+def test_presign_upload(s3_service: S3Service, mock_s3_client: MagicMock) -> None:
+    upload = s3_service.presign_upload(
         "ws/fastq/file.fastq.gz",
         content_type="application/gzip",
         expires_in=120,
     )
-    assert url == "https://s3.example/presigned"
+    assert upload.url == "https://s3.example/presigned"
+    assert upload.headers == {"Content-Type": "application/gzip"}
     mock_s3_client.generate_presigned_url.assert_called_once_with(
         ClientMethod="put_object",
         Params={
