@@ -166,6 +166,8 @@ async def test_status_follows_fastq_registration_and_verified_upload(
         headers=headers,
     )
     assert fastq.status_code == 201, fastq.text
+    assert fastq.json()["uploadUrl"].startswith("https://upload.test/")
+    assert fastq.json()["uploadHeaders"] == {"Content-Type": "application/gzip"}
     after_fastq = await client.get(f"/api/v1/samples/{sample['id']}", headers=headers)
     assert after_fastq.json()["status"] == "fastq_received"
 

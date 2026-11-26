@@ -30,6 +30,8 @@ from app.services.samplesheet import storage_prefix
 
 router = APIRouter(prefix="/fastq", tags=["fastq"])
 
+FASTQ_CONTENT_TYPE = "application/gzip"
+
 
 @router.post(
     "/register",
@@ -74,7 +76,7 @@ async def register_fastq(
     db.add(fastq)
     await db.flush()
 
-    upload_url = s3_service.generate_presigned_upload_url(s3_key, content_type="application/gzip")
+    upload = s3_service.presign_upload(s3_key, content_type=FASTQ_CONTENT_TYPE)
 
     await audit_service.record(
         db,
@@ -106,7 +108,8 @@ async def register_fastq(
         size_bytes=fastq.size_bytes,
         expected_md5=fastq.expected_md5,
         verification_status=fastq.verification_status,
-        upload_url=upload_url,
+        upload_url=upload.url,
+        upload_headers=upload.headers,
         workspace=fastq.workspace,
         created_at=fastq.created_at,
     )

@@ -36,6 +36,14 @@ _MD5_CHUNK_BYTES = 8 * 1024 * 1024
 
 
 @dataclass(frozen=True, slots=True)
+class PresignedUpload:
+    """A presigned PUT: clients send exactly ``headers``, which are part of the signature."""
+
+    url: str
+    headers: dict[str, str]
+
+
+@dataclass(frozen=True, slots=True)
 class StoredObject:
     key: str
     size_bytes: int
@@ -89,14 +97,14 @@ class S3Service:
         safe_name = filename.lstrip("/")
         return f"{workspace.strip('/')}/{prefix.strip('/')}/{safe_name}"
 
-    def generate_presigned_upload_url(
+    def presign_upload(
         self,
         key: str,
         *,
         content_type: str = "application/octet-stream",
         expires_in: int | None = None,
-    ) -> str:
-        return self._client.generate_presigned_url(
+    ) -> PresignedUpload:
+        url = self._client.generate_presigned_url(
             ClientMethod="put_object",
             Params={
                 "Bucket": self._bucket,
@@ -105,6 +113,8 @@ class S3Service:
             },
             ExpiresIn=expires_in or self._expire,
         )
+        # Every signed parameter that maps to a request header, so clients never guess them.
+        return PresignedUpload(url=url, headers={"Content-Type": content_type})
 
     def generate_presigned_download_url(
         self,

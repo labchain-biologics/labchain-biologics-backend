@@ -43,7 +43,12 @@ def _fastq_json(fastq_id: str, status: str, md5: str) -> dict[str, object]:
 def _serve_fastq(server: FakeServer, verify_status: str) -> str:
     fastq_id = str(uuid.uuid4())
     md5 = hashlib.md5(READS).hexdigest()
-    registration = {**_fastq_json(fastq_id, "pending", md5), "uploadUrl": UPLOAD_URL}
+    registration = {
+        **_fastq_json(fastq_id, "pending", md5),
+        "uploadUrl": UPLOAD_URL,
+        # A header only the server knows: the SDK must forward what it is given.
+        "uploadHeaders": {"Content-Type": "application/gzip", "x-amz-meta-origin": "lims"},
+    }
     server.on("POST", "/api/v1/fastq/register", ok(registration, 201))
     server.on("PUT", "/bucket/lab-west/fastq/reads.fastq.gz", ok(None))
     verification = {
@@ -87,6 +92,7 @@ def test_upload_registers_puts_and_verifies(
     put = server.last("PUT", "/bucket/lab-west/fastq/reads.fastq.gz")
     assert put.content == READS
     assert put.headers["Content-Type"] == "application/gzip"
+    assert put.headers["x-amz-meta-origin"] == "lims"
     assert put.headers["Content-Length"] == str(len(READS))
     # The signed URL is the credential: the API token and workspace must not leak to storage.
     assert "Authorization" not in put.headers

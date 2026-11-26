@@ -32,7 +32,7 @@ from app.main import app
 from app.models.user import Role, User
 from app.models.workspace import Workspace, WorkspaceMembership
 from app.services import batch
-from app.services.s3 import ObjectChecksum, StoredObject, s3_service
+from app.services.s3 import ObjectChecksum, PresignedUpload, StoredObject, s3_service
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -221,8 +221,10 @@ def fake_s3(monkeypatch: pytest.MonkeyPatch) -> FakeS3:
         monkeypatch.setattr(s3_service, name, getattr(fake, name))
     monkeypatch.setattr(
         s3_service,
-        "generate_presigned_upload_url",
-        lambda key, **_: f"https://upload.test/{key}",
+        "presign_upload",
+        lambda key, *, content_type, **_: PresignedUpload(
+            url=f"https://upload.test/{key}", headers={"Content-Type": content_type}
+        ),
     )
     monkeypatch.setattr(
         s3_service,

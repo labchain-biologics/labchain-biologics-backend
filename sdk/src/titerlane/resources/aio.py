@@ -372,7 +372,7 @@ class AsyncFastq(AsyncResource):
             read_pair=read_pair,
         )
         await self._http.storage_put(
-            registration.upload_url, _read_chunks(file_path), upload_headers(size)
+            registration.upload_url, _read_chunks(file_path), upload_headers(registration, size)
         )
         verification = await self.verify(registration.id)
         check_verification(file_path, local_md5, registration, verification)
