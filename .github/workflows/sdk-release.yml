@@ -3,10 +3,20 @@ name: SDK release
 # Publishes labchain-biologics-sdk to PyPI when a tag `sdk-vX.Y.Z` is pushed.
 # Trusted publishing (OIDC): no PyPI token is stored in GitHub. PyPI must list this
 # repository, this workflow file and the `pypi` environment as a trusted publisher.
+#
+# Pull requests that touch the SDK or this workflow run the build job as a dry run (tests,
+# build, twine, clean-install smoke test) so packaging problems show up before a release.
+# The tag checks and the publish job only run for tags.
 
 on:
   push:
     tags: ["sdk-v*"]
+  pull_request:
+    branches: [main]
+    paths:
+      - "sdk/**"
+      - "uv.lock"
+      - ".github/workflows/sdk-release.yml"
 
 permissions:
   contents: read
@@ -28,10 +38,19 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Read the SDK version
+        id: version
+        run: |
+          version="$(sed -nE 's/^__version__ = "([^"]+)"$/\1/p' sdk/src/labchain/_version.py)"
+          echo "SDK version: ${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
       - name: Check that the tag matches the SDK version
+        if: github.event_name == 'push'
+        env:
+          version: ${{ steps.version.outputs.version }}
         run: |
           tag="${GITHUB_REF_NAME#sdk-v}"
-          version="$(sed -nE 's/^__version__ = "([^"]+)"$/\1/p' sdk/src/labchain/_version.py)"
           echo "tag=${tag} version=${version}"
           if [ "${tag}" != "${version}" ]; then
             echo "::error::Tag ${GITHUB_REF_NAME} does not match sdk/src/labchain/_version.py (${version})"
@@ -59,10 +78,12 @@ jobs:
         run: uvx twine check --strict dist/*
 
       - name: Smoke-test the wheel in a clean environment
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           uv venv --python 3.11 /tmp/smoke
           uv pip install --python /tmp/smoke "$(ls dist/*.whl)[cli]"
-          /tmp/smoke/bin/python -c "import labchain, sys; print(labchain.__version__); assert labchain.__version__ == '${GITHUB_REF_NAME#sdk-v}'"
+          /tmp/smoke/bin/python -c "import labchain; print(labchain.__version__); assert labchain.__version__ == '${VERSION}'"
           /tmp/smoke/bin/labchain version
           # The licence of the SDK must ship with it.
           unzip -l dist/*.whl | grep -q "licenses/LICENSE"
@@ -77,6 +98,8 @@ jobs:
   publish:
     name: Publish to PyPI
     needs: build
+    # Never from a pull request: only a pushed sdk-v* tag publishes.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/sdk-v')
     runs-on: ubuntu-latest
     environment:
       name: pypi

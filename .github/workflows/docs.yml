@@ -9,16 +9,25 @@ on:
       - "pyproject.toml"
       - "uv.lock"
       - ".github/workflows/docs.yml"
+  # Pull requests only build the site (strict), so docs and workflow changes are checked
+  # before they reach main; deployment stays on main.
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 concurrency:
-  group: pages
+  # A pull request build must never cancel a deployment from main.
+  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.event.pull_request.number) || 'pages' }}
   cancel-in-progress: true
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   build:
@@ -41,6 +50,7 @@ jobs:
         run: uv run mkdocs build --strict
 
       - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4
         with:
           path: site
@@ -48,7 +58,11 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

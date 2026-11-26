@@ -48,6 +48,8 @@ jobs:
               - 'pyproject.toml'
               - 'uv.lock'
               - '.pre-commit-config.yaml'
+              # A change to this workflow must run the jobs it defines.
+              - '.github/workflows/ci.yml'
             workflows:
               - '.github/workflows/**'
             markdown:
@@ -55,6 +57,7 @@ jobs:
               - '.markdownlint-cli2.yaml'
               - 'mkdocs.yml'
               - 'docs/**'
+              - '.github/workflows/ci.yml'
             docker:
               - 'Dockerfile*'
               - 'docker-compose*.yml'
