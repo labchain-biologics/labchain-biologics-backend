@@ -106,6 +106,13 @@ uv run poe start-dev
 
 Default CORS origin for the Vite frontend: `http://localhost:5173`.
 
+## Self-hosting
+
+A container image is published to GitHub Container Registry
+(`ghcr.io/titerlane-biologics/titerlane-biologics-backend`), with a production Docker Compose
+setup in [`deploy/`](deploy/) (Postgres, one-shot migrations, Docker secrets). See the
+[self-hosting guide](docs/self-hosting.md).
+
 ## API overview
 
 All authenticated routes expect:
