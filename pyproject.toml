@@ -42,6 +42,7 @@ docs = [
 
 [project.scripts]
 titerlane-server = "uvicorn:main"
+titerlane-admin = "app.cli:run"
 
 [tool.uv.workspace]
 # The Python SDK (Apache-2.0) is developed here so API and client change together.

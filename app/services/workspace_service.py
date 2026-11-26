@@ -13,7 +13,7 @@ from app.models.workspace import Workspace, WorkspaceMembership
 from app.services.audit_service import audit_service
 
 
-def _membership_state(membership: WorkspaceMembership, email: str) -> dict[str, str]:
+def membership_audit_state(membership: WorkspaceMembership, email: str) -> dict[str, str]:
     return {"userId": str(membership.user_id), "email": email, "role": membership.role.value}
 
 
@@ -53,7 +53,7 @@ class WorkspaceService:
             entity_type="workspace_membership",
             entity_id=membership.id,
             workspace=workspace.slug,
-            after_state=_membership_state(membership, creator.email),
+            after_state=membership_audit_state(membership, creator.email),
         )
         return workspace, membership
 
@@ -100,7 +100,7 @@ class WorkspaceService:
             entity_type="workspace_membership",
             entity_id=membership.id,
             workspace=workspace.slug,
-            after_state=_membership_state(membership, user.email),
+            after_state=membership_audit_state(membership, user.email),
         )
         return membership, user
 
@@ -119,7 +119,7 @@ class WorkspaceService:
             return membership, user
         if membership.role == Role.bioinformatics_lead:
             await self._ensure_not_last_lead(db, workspace_id=workspace.id)
-        before = _membership_state(membership, user.email)
+        before = membership_audit_state(membership, user.email)
         membership.role = role
         await db.flush()
         await audit_service.record(
@@ -130,7 +130,7 @@ class WorkspaceService:
             entity_id=membership.id,
             workspace=workspace.slug,
             before_state=before,
-            after_state=_membership_state(membership, user.email),
+            after_state=membership_audit_state(membership, user.email),
         )
         return membership, user
 
@@ -146,7 +146,7 @@ class WorkspaceService:
         membership, user = await self._get_member(db, workspace_id=workspace.id, user_id=user_id)
         if membership.role == Role.bioinformatics_lead:
             await self._ensure_not_last_lead(db, workspace_id=workspace.id)
-        before = _membership_state(membership, user.email)
+        before = membership_audit_state(membership, user.email)
         membership_id = membership.id
         await db.delete(membership)
         await db.flush()
