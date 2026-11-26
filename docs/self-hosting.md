@@ -90,20 +90,16 @@ straight from storage through presigned URLs, so:
 - the storage endpoint must be reachable by your users' browsers, not only by the API;
 - the bucket CORS policy must allow your web origins (`PUT`, `GET`, `HEAD`, exposing `ETag`).
 
-=== "AWS S3"
+**AWS S3.** Leave `S3_ENDPOINT_URL` empty. Prefer an IAM role (EC2 instance profile, ECS
+task role) over keys: with `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` unset, the API
+uses the standard AWS credential chain. The role needs `s3:GetObject`, `s3:PutObject`,
+`s3:ListBucket` on the bucket, plus the AWS Batch permissions if you run pipelines.
 
-    Leave `S3_ENDPOINT_URL` empty. Prefer an IAM role (EC2 instance profile, ECS task role)
-    over keys: with `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` unset, the API uses the
-    standard AWS credential chain. The role needs `s3:GetObject`, `s3:PutObject`,
-    `s3:ListBucket` on the bucket, plus the AWS Batch permissions if you run pipelines.
-
-=== "S3-compatible"
-
-    Set `S3_ENDPOINT_URL` to the public endpoint of the service (path-style addressing is
-    used) and set `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. With a custom endpoint the
-    API also creates the bucket if it is missing and applies `CORS_ORIGINS` to it at
-    startup; a service that does not support the bucket CORS API logs a warning, and you
-    configure CORS on the service itself.
+**S3-compatible service.** Set `S3_ENDPOINT_URL` to the public endpoint of the service
+(path-style addressing is used) and set `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. With
+a custom endpoint the API also creates the bucket if it is missing and applies
+`CORS_ORIGINS` to it at startup; a service that does not support the bucket CORS API logs a
+warning, and you configure CORS on the service itself.
 
 ## 4. Start
 
